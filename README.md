@@ -1,3 +1,15 @@
+# MakanPop! V5 — POP EDITION
+
+视觉升级：Premium Playful 潮玩扭蛋风。保留 V4 的 GPS、附近真实 OpenStreetMap 餐厅、预算/偏好筛选、Blacklist、个人消费记录、主题色切换等代码功能。没有额外要求 API Key，也没有添加付费服务。
+
+**快速开始**：解压全部文件后，将 `.gitignore`、`package.json`、`public`、`server.mjs` 和 `README.md` 复制到原本的 GitHub `makanpop-site` 项目文件夹，替换旧文件；然后在 GitHub Desktop Commit 和 Push。
+
+**StackBlitz**：用 `https://stackblitz.com/github/你的GitHub用户名/makanpop-site` 打开。需要 HTTPS 及定位授权才可使用 GPS；公开 Overpass 服务需要联网，可能限流或暂时不可用。
+
+**部署 Cloudflare Pages**：Framework None，Build command `exit 0`，Output directory `public`。
+
+**注意**：这是 CSS 立体视觉扭蛋机，不是物理引擎 3D；餐厅价格及菜单数据并不完整。新版外观未修改餐厅筛选业务逻辑。
+
 # MakanPop! — StackBlitz + GitHub + Cloudflare Pages
 
 基于 **MakanPop V4**：真实 OpenStreetMap 餐厅、GPS、RM 预算（仅有记录时能可靠筛选）、Blacklist、可更换主题、互动扭蛋机。

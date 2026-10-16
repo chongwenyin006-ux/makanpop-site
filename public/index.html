@@ -5,10 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="theme-color" content="#fff8f2" />
   <meta name="description" content="MakanPop — 今天吃什么？用美食扭蛋帮你决定。" />
-  <title>MakanPop! V4 — 附近真实餐厅</title>
+  <title>MakanPop! — 今天吃什么？扭一下就知道</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;500;600;700;800;900&family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <style>
     :root { --primary:#ed625b; --primary-soft:#fff0e9; --bg:#fff9f3; --paper:#fff; --ink:#2f2625; --sub:#807570; --line:#efe7e1; --shadow:0 22px 75px rgba(100,56,39,.085); --machine:#ed625b; --accent:#ffd5b6; }
     * {box-sizing:border-box} html {scroll-behavior:smooth} body {margin:0;background:var(--bg);color:var(--ink);font-family:Nunito,'Noto Sans SC',system-ui,sans-serif;font-size:15px} button,input,select {font:inherit} button {cursor:pointer} button:focus-visible,input:focus-visible {outline:3px solid color-mix(in srgb,var(--primary) 40%,white);outline-offset:3px} a {color:inherit} .container {width:min(1160px,calc(100% - 40px));margin:auto}
@@ -35,7 +35,85 @@
     .personal-price-line input{width:125px;min-width:0;padding:12px 13px;background:white;border:1px solid var(--line);border-radius:12px}
     .personal-price-line .btn{padding:12px 17px}
     @media(max-width:580px){.personal-price-line input{flex:1}}
-  </style>
+  
+    /* V5 — MakanPop premium playful redesign. Existing app functions untouched. */
+    :root { --bg:#fffaf3; --line:#f1e7db; --shadow:0 15px 55px rgba(83,45,36,.075) }
+    body { background:radial-gradient(ellipse at 7% 8%,color-mix(in srgb,var(--primary) 6%,transparent) 0,transparent 45%),var(--bg); overflow-x:clip }
+    .container { width:min(1240px,calc(100% - 64px)) }
+    .site-header { height:90px;border-color:color-mix(in srgb,var(--primary) 11%,var(--line));position:relative;z-index:5 }
+    .brand { font-family:Fredoka,Nunito,sans-serif;font-size:28px;letter-spacing:-1.1px;gap:11px }
+    .brand-icon { width:44px;height:44px;border-radius:16px;box-shadow:0 7px 0 color-mix(in srgb,var(--primary) 28%,transparent),0 10px 20px rgba(104,50,40,.12);transform:rotate(-10deg);font-size:23px }
+    .brand em { color:var(--primary) }
+    .nav-item { font-weight:900;font-size:13px;border-radius:50px;padding:12px 17px }
+    .theme-launch { font-weight:900;border:2px solid var(--ink);padding:10px 18px;box-shadow:3px 4px 0 var(--ink);transition:transform .15s,box-shadow .15s }
+    .theme-launch:hover { transform:translateY(2px);box-shadow:1px 2px 0 var(--ink) }
+    .hero { grid-template-columns:1.02fr 1fr; gap:32px;min-height:650px;padding:42px 0 64px }
+    .eyebrow { color:var(--ink);background:color-mix(in srgb,var(--primary) 12%,white);border:1px solid color-mix(in srgb,var(--primary) 25%,transparent);font-size:11px;letter-spacing:1.2px;border-radius:100px;padding:10px 16px;box-shadow:0 4px 0 color-mix(in srgb,var(--primary) 12%,transparent) }
+    .eyebrow-flash { font-size:16px;color:var(--primary) }
+    .hero-kicker { font:900 12px Nunito,sans-serif;letter-spacing:3px;color:var(--primary);margin:40px 0 4px }
+    .hero h1 { font-family:Fredoka,'Noto Sans SC',sans-serif;line-height:1.13;font-size:clamp(54px,5.8vw,83px);font-weight:700;letter-spacing:-3px;margin:0 0 22px }
+    .headline-cn,.headline-bottom { display:block;white-space:nowrap }
+    .headline-cn { letter-spacing:-4px;font-family:'Noto Sans SC',Nunito,sans-serif;font-weight:900 }
+    .headline-bottom { font-family:Fredoka,Nunito,sans-serif;font-size:clamp(60px,6.8vw,101px);letter-spacing:-4px;line-height:1.25 }
+    .headline-bottom em { color:var(--primary);font-style:normal;text-shadow:4px 5px 0 color-mix(in srgb,var(--primary) 18%,transparent) }
+    .word-highlight { position:relative;z-index:0 }
+    .word-highlight:after { content:'';position:absolute;height:15px;left:0;right:8px;bottom:0;background:#ffdb73;z-index:-1;transform:rotate(-2deg);border-radius:20px }
+    .question-bubble { display:inline-flex;align-items:center;justify-content:center;transform:rotate(12deg) translate(1px,-10px);width:48px;height:48px;border:3px solid var(--ink);border-radius:50%;background:#fbd65a;color:var(--ink);font:700 37px Fredoka,sans-serif;letter-spacing:0;box-shadow:4px 5px 0 var(--ink) }
+    .hero-desc {font-size:17px;font-weight:600;max-width:520px;line-height:1.95;margin:0;color:var(--sub)}
+    .hero-actions { margin-top:25px;gap:15px }
+    .hero-actions .btn { min-height:58px;display:inline-flex;align-items:center;gap:12px;justify-content:space-between;font-size:15px }
+    .btn { border-radius:17px;transition:transform .15s,box-shadow .15s;box-shadow:0 7px 0 color-mix(in srgb,var(--primary) 30%,transparent),0 10px 28px color-mix(in srgb,var(--primary) 17%,transparent) }
+    .btn:hover { transform:translateY(-3px);box-shadow:0 10px 0 color-mix(in srgb,var(--primary) 24%,transparent),0 13px 28px color-mix(in srgb,var(--primary) 17%,transparent) }
+    .btn:active { transform:translateY(3px);box-shadow:0 2px 0 color-mix(in srgb,var(--primary) 24%,transparent) }
+    .btn.secondary { border:2px solid var(--line);box-shadow:0 4px 0 var(--line) }
+    .btn.secondary:hover { box-shadow:0 6px 0 var(--line) }
+    .location-hero-status {margin-top:20px;border-radius:100px;padding:10px 15px;box-shadow:none;font-size:11px}
+    .feature-row { margin-top:31px;gap:12px }
+    .feature-row span { display:flex;gap:8px;align-items:center;border-radius:100px;border:1px solid var(--line);padding:9px 13px;background:var(--paper);color:var(--ink);font-weight:900 }
+    .feature-row strong { font:900 11px Nunito,sans-serif;display:grid;place-items:center;border-radius:50%;width:26px;height:26px;background:color-mix(in srgb,var(--primary) 12%,white);color:var(--primary) }
+    .machine-stage { min-height:565px;border:2px solid #fff;box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--primary) 15%,transparent),0 28px 60px rgba(105,51,39,.14);border-radius:42px;background:radial-gradient(circle at 47% 36%,#fffdf9 0%,color-mix(in srgb,var(--primary) 8%,#ffe6cf) 42%,color-mix(in srgb,var(--primary) 22%,#f3d7b7) 100%);isolation:isolate;overflow:hidden }
+    .machine-stage::before {content:'';position:absolute;inset:0;pointer-events:none;opacity:.32;background-image:radial-gradient(color-mix(in srgb,var(--primary) 30%,transparent) 1.4px,transparent 1.4px);background-size:20px 20px;mask-image:linear-gradient(130deg,transparent 22%,#000 100%)}
+    .machine-stage::after {content:'';pointer-events:none;position:absolute;inset:auto -30px -110px;height:180px;background:#fef8ec88;border-radius:50%;z-index:0}
+    .stage-halo { position:absolute;width:425px;height:425px;border-radius:50%;top:60px;left:50%;transform:translateX(-50%);background:radial-gradient(circle at 38% 27%,#fffde4,#ffe8b4 65%,transparent 71%);border:1px dashed color-mix(in srgb,var(--primary) 35%,transparent);box-shadow:0 0 0 26px #ffffff55,0 0 0 28px color-mix(in srgb,var(--primary) 10%,transparent);z-index:0 }
+    .stage-platform { position:absolute;bottom:37px;left:50%;transform:translateX(-50%);width:340px;height:55px;border-radius:50%;background:linear-gradient(#fff9ea,#dec1a2);box-shadow:0 15px 0 #cbaa85,0 20px 30px #7b413a33;border:3px solid #fff7de;z-index:0 }
+    .stage-pill { top:24px;left:23px;background:#ffffffdf;font-size:11px;z-index:10;color:var(--ink);border:1px solid white;box-shadow:0 5px 12px #8c523211 }
+    .stage-side-label {position:absolute;right:-108px;top:50%;transform:rotate(90deg);z-index:6;letter-spacing:3px;font:900 11px Fredoka,Nunito,sans-serif;color:color-mix(in srgb,var(--primary) 65%,var(--ink))}
+    .stage-side-label span { font-size:19px;margin:0 8px }
+    .stage-sticker { position:absolute;right:23px;top:71px;width:105px;height:105px;border-radius:50%;background:#ffdc6b;border:3px solid var(--ink);box-shadow:5px 6px 0 var(--ink);transform:rotate(14deg);display:flex;align-items:center;justify-content:center;flex-direction:column;font:700 28px Fredoka,sans-serif;z-index:8;color:#28201f;line-height:1 }
+    .stage-sticker small { font:900 12px Fredoka,sans-serif;margin-top:5px;letter-spacing:1.1px }
+    .machine-stage .machine { z-index:5;transform:scale(1.07) translateY(0px);transition:filter .18s;filter:drop-shadow(0 31px 19px rgba(101,47,35,.2)) }
+    .machine-stage .machine:hover {filter:drop-shadow(0 32px 25px rgba(101,47,35,.3))}
+    .machine .lid {box-shadow:inset 0 8px 0 #ffffff5a,0 4px 9px #7a333533}
+    .machine .glass {background:linear-gradient(125deg,#ffffffd9 0%,#ffffff42 20%,transparent 32%,#ffffff35 80%,#ffffffb5 100%),radial-gradient(circle at 38% 18%,#ffffff,#fff2e8 57%,#f5ad968a 100%);box-shadow:inset 0 0 0 4px color-mix(in srgb,var(--machine) 14%,transparent),inset -15px -20px 18px #d895784d,0 16px 18px #9d5d4826}
+    .machine .base {box-shadow:inset 12px 2px 17px #ffffff3a,inset -14px -3px 20px #8e282838,0 12px 18px #8e28282a}
+    .machine .knob {box-shadow:0 7px 3px #712c2840,0 0 0 8px #ffffff80;transition:filter .18s,scale .18s}
+    .machine .knob:hover {filter:brightness(1.08);scale:1.05}
+    .float-food {position:absolute;width:65px;height:65px;border-radius:20px;display:grid;place-items:center;background:white;border:2px solid color-mix(in srgb,var(--primary) 22%,white);box-shadow:4px 6px 0 color-mix(in srgb,var(--primary) 15%,transparent);font-size:34px;z-index:7;animation:floatY 4s ease-in-out infinite;pointer-events:none}
+    .float-a {left:30px;top:130px;transform:rotate(-14deg)} .float-b {right:36px;bottom:113px;transform:rotate(13deg);animation-delay:-2s}
+    @keyframes floatY {0%,100%{translate:0 0}50%{translate:0 -10px}}
+    .sparkle {z-index:6;filter:drop-shadow(2px 2px white)} .sparkle.one {top:128px;right:160px;font-size:26px}.sparkle.two {bottom:118px;left:54px}
+    .stage-caption {bottom:16px;z-index:10;font:900 10px Fredoka,Nunito,sans-serif;letter-spacing:2px;color:#67534b}
+    .tiny-dot {display:inline-block;width:6px;height:6px;background:var(--primary);border-radius:50%;vertical-align:middle;margin:0 10px}
+    .brand-marquee {background:var(--primary);overflow:hidden;color:#fff8ee;width:100vw;margin-left:calc(50% - 50vw);margin-right:0;border-top:2px solid color-mix(in srgb,var(--primary) 80%,#000);border-bottom:2px solid color-mix(in srgb,var(--primary) 80%,#000);transform:none;box-shadow:0 7px 0 #f8d9c933}
+    .brand-marquee-track {font:900 15px Fredoka,Nunito,sans-serif;letter-spacing:1.5px;white-space:nowrap;width:max-content;padding:14px 0;animation:marquee 35s linear infinite}
+    @keyframes marquee {to{transform:translateX(-50%)}}
+    .section {padding:80px 0 40px}
+    .section-overline {font:900 12px Fredoka,Nunito,sans-serif;letter-spacing:3px;color:var(--primary);display:block;margin-bottom:9px}
+    .section-heading h2 {font-family:'Noto Sans SC',Nunito,sans-serif;font-size:clamp(29px,3.2vw,42px);letter-spacing:-1.4px}
+    .heading-accent {display:inline-block;color:var(--primary);font-size:25px;vertical-align:top;transform:rotate(15deg)}
+    .section-heading p {font-weight:600;font-size:14px}
+    .panel {border:1.5px solid var(--line);border-radius:28px;box-shadow:0 9px 0 color-mix(in srgb,var(--primary) 5%,transparent),0 15px 45px rgba(83,45,36,.06)}
+    .panel h3 {font-family:'Noto Sans SC',Nunito,sans-serif;letter-spacing:-.4px}
+    .chip {background:#fffdfb;border:1px solid var(--line);border-radius:100px;padding:10px 15px;box-shadow:0 2px 0 #eee5dc;transition:transform .15s,border .15s}
+    .chip:hover {transform:translateY(-2px);border-color:var(--primary)}
+    .chip.is-selected {box-shadow:0 3px 0 color-mix(in srgb,var(--primary) 25%,transparent)}
+    .theme-card {transition:transform .15s}.theme-card:hover {transform:translateY(-2px)}
+    .footer {margin-top:50px}
+    @media(max-width:1100px) { .hero{gap:10px}.hero h1{font-size:62px}.headline-bottom{font-size:76px}.machine-stage{min-height:520px}.machine-stage .machine{transform:scale(.93)}.stage-sticker{width:90px;height:90px;right:16px;top:68px;font-size:22px}.stage-side-label{display:none} }
+    @media(max-width:900px) { .container{width:min(100% - 40px,760px)} .hero{grid-template-columns:1fr;gap:25px;text-align:center;padding-top:45px} .hero h1{font-size:72px}.headline-cn,.headline-bottom{white-space:normal}.hero-kicker{margin-top:30px}.hero-desc{margin:0 auto}.hero-actions,.feature-row{justify-content:center}.machine-stage{min-height:530px;width:min(560px,100%);margin:auto}.machine-stage .machine{transform:scale(1)}.stage-side-label{display:block}.brand-marquee{width:100vw;margin-left:calc(50% - 50vw);margin-right:0} }
+    @media(max-width:700px) { .container{width:min(100% - 26px,550px)}.site-header{height:74px}.brand{font-size:23px}.brand-icon{width:35px;height:35px;font-size:19px;border-radius:12px}.nav-item{padding:8px 7px;font-size:11px}.theme-launch{font-size:11px;padding:7px 10px;box-shadow:2px 3px 0 var(--ink)}.hero{padding:24px 0 50px;gap:29px}.eyebrow{font-size:9px}.hero-kicker{font-size:10px;letter-spacing:2px;margin:26px 0 6px}.hero h1{font-size:clamp(38px,9vw,57px);letter-spacing:-2px}.headline-cn{letter-spacing:-2px}.headline-bottom{font-size:clamp(50px,13vw,78px);letter-spacing:-3px}.question-bubble{width:34px;height:34px;font-size:25px;border:2px solid var(--ink);box-shadow:3px 3px 0 var(--ink)}.word-highlight:after{height:9px}.hero-desc{font-size:14px;line-height:1.9}.hero-actions{margin-top:21px;justify-content:center}.hero-actions .btn{min-height:50px;padding:11px 15px;font-size:12px}.feature-row{margin-top:23px;gap:7px}.feature-row span{padding:6px 9px;font-size:10px}.feature-row strong{font-size:9px;width:22px;height:22px}.location-hero-status{font-size:10px}.machine-stage{min-height:475px;border-radius:32px}.stage-halo{top:50px;width:330px;height:330px}.machine-stage .machine{transform:scale(.9)}.stage-platform{width:260px;bottom:37px}.stage-sticker{width:71px;height:71px;font-size:18px;right:13px;top:82px;box-shadow:3px 4px 0 var(--ink)}.stage-sticker small{font-size:9px}.float-food{width:44px;height:44px;font-size:25px;border-radius:13px}.float-a{left:14px;top:140px}.float-b{right:13px;bottom:95px}.stage-pill{font-size:9px;padding:7px 10px}.stage-side-label{display:none}.stage-caption{font-size:8px;letter-spacing:1.4px}.brand-marquee{width:100vw;margin-left:calc(50% - 50vw);margin-right:0}.brand-marquee-track{font-size:12px;padding:12px 0}.section{padding-top:70px}.section-heading h2{font-size:28px}.panel{padding:22px;border-radius:22px}}
+    @media(max-width:375px){.site-header{gap:3px}.brand{font-size:19px;gap:4px}.brand-icon{height:30px;width:30px}.nav-item{font-size:10px;padding:5px}.theme-launch{font-size:10px;padding:6px}.machine-stage .machine{transform:scale(.80)}.stage-halo{width:300px;height:300px}}
+</style>
 </head>
 <body>
 <div class="container">
@@ -52,28 +130,39 @@
   <main>
     <section id="top" class="hero" aria-label="MakanPop 首页">
       <div>
-        <div class="eyebrow">✦ 美食扭蛋 · 简约好玩</div>
-        <h1>Makan<span class="color">Pop!</span><br><span style="font-size:.51em;letter-spacing:-1.5px">今天吃什么？</span></h1>
-        <p class="hero-desc">只推荐真实存在的附近餐厅。<br>允许定位或选择地区，再 Pop 出今天的美食！</p>
+        <div class="eyebrow"><span class="eyebrow-flash">✦</span> THE FOOD DECIDER · MALAYSIA</div>
+        <div class="hero-kicker">YOUR CRAVINGS. OUR LITTLE SURPRISE.</div>
+        <h1><span class="headline-cn">今天吃<span class="word-highlight">什么<span class="question-bubble">?</span></span></span><span class="headline-bottom">LET'S <em>POP!</em></span></h1>
+        <p class="hero-desc">别再纠结晚餐了。设好预算和口味，<br>转动扭蛋机，看看附近哪家餐厅被抽中！</p>
         <div class="hero-actions">
-          <button class="btn" id="homeSpin">📍 找我附近的餐厅　→</button>
-          <button class="btn secondary" data-scroll="filters">⚙ 设定条件</button>
+          <button class="btn" id="homeSpin"><span aria-hidden="true">✦</span> 探索附近餐厅 <span aria-hidden="true">↗</span></button>
+          <button class="btn secondary" data-scroll="filters">先选口味 <span aria-hidden="true">→</span></button>
         </div>
-        <div class="location-hero-status" id="heroLocation" role="status">📍 尚未定位 · 点击上方按钮开始</div><div class="feature-row"><span><strong>⌖</strong> 附近餐厅</span><span><strong>RM</strong> 预算</span><span><strong>♡</strong> 喜好筛选</span><span><strong>⊘</strong> Blacklist</span></div>
+        <div class="location-hero-status" id="heroLocation" role="status">📍 尚未定位 · 点击上方按钮开始</div>
+        <div class="feature-row"><span><strong>01</strong> 找附近</span><span><strong>02</strong> 设条件</span><span><strong>03</strong> 转扭蛋</span></div>
       </div>
       <div class="machine-stage">
-        <div class="stage-pill" id="modePill">○ 等待定位 · 真实餐厅</div><span class="sparkle one">✧</span><span class="sparkle two">✧</span>
+        <div class="stage-halo"></div>
+        <div class="stage-pill" id="modePill">○ 等待定位 · 真实餐厅</div>
+        <div class="stage-side-label">SPIN SOME JOY <span>✦</span> EAT SOMETHING GOOD</div>
+        <span class="stage-sticker">100%<small>HUNGRY</small></span>
+        <span class="float-food float-a" aria-hidden="true">🍜</span><span class="float-food float-b" aria-hidden="true">🍣</span>
+        <div class="stage-platform"></div>
+        <span class="sparkle one" aria-hidden="true">✦</span><span class="sparkle two" aria-hidden="true">✧</span>
         <div id="gacha" class="machine" role="img" aria-label="可互动的扭蛋机">
           <div class="nipple"></div><div class="lid"></div>
           <div class="glass"><div class="ball">🍜</div><div class="ball">🍔</div><div class="ball">🍣</div><div class="ball">🍚</div><div class="ball">🍕</div><div class="ball">🥤</div><div class="ball">🍛</div></div>
           <div class="base"></div><button id="machineKnob" class="knob" aria-label="转动扭蛋机把手"><span class="knob-handle"></span></button><div class="chute"></div><div class="foot"></div><div class="outball"></div>
         </div>
-        <div class="stage-caption">先定位，找到真实餐厅后即可转动把手</div>
+        <div class="stage-caption"><span class="tiny-dot"></span> TURN THE KNOB · FIND YOUR BITE <span class="tiny-dot"></span></div>
       </div>
     </section>
+    <div class="brand-marquee" aria-label="附近真实餐厅 · 马来西亚 · 免费美食扭蛋">
+      <div class="brand-marquee-track">✦ MADE FOR THE INDECISIVE &nbsp;&nbsp; 🍜 REAL PLACES, REAL CRAVINGS &nbsp;&nbsp; ✦ NO MORE “吃什么都可以” &nbsp;&nbsp; 🍣 MAKANPOP! &nbsp;&nbsp; ✦ MADE FOR THE INDECISIVE &nbsp;&nbsp; 🍜 REAL PLACES, REAL CRAVINGS &nbsp;&nbsp; ✦ NO MORE “吃什么都可以” &nbsp;&nbsp; 🍣 MAKANPOP!</div>
+    </div>
 
     <section id="filters" class="section">
-      <div class="section-heading"><div><h2>设定你的美食条件 ✨</h2><p>选择想吃的，排除不想吃的，剩下交给扭蛋。</p></div></div>
+      <div class="section-heading"><div><span class="section-overline">01 / THE SETUP</span><h2>你的胃，你做主。<span class="heading-accent">✳</span></h2><p>选择想吃的，排除不想吃的，剩下交给扭蛋。</p></div></div>
       <div class="layout-filters">
         <div class="panel">
           <div class="field"><label>📍 你想从哪里找餐厅？</label>
@@ -98,10 +187,10 @@
       </div>
     </section>
 
-    <section id="resultSection" class="section results-box" aria-live="polite"><div class="section-heading"><div><h2>🎉 你的扭蛋结果！</h2><p>命运决定好了，要不要去吃？</p></div></div><div id="resultCard" class="result-card"></div></section>
+    <section id="resultSection" class="section results-box" aria-live="polite"><div class="section-heading"><div><span class="section-overline">02 / THE REVEAL</span><h2>哇！你抽中了！ <span class="heading-accent">✳</span></h2><p>命运决定好了，要不要去吃？</p></div></div><div id="resultCard" class="result-card"></div></section>
     <section id="blacklist" class="section"><div class="section-heading"><div><h2>你的 Blacklist ⛔</h2><p>不想再抽到的餐厅，都放在这里。</p></div><button class="btn secondary" id="clearExpired">清除过期记录</button></div><div id="blacklistItems"></div></section>
   </main>
-  <footer class="footer"><span>© 2026 MakanPop! · Eat. Pop. Discover.</span><span>V4 免费版 · 真实地点数据来自 <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">© OpenStreetMap contributors（ODbL）</a> · 实际就餐前请核对价格与食材</span></footer>
+  <footer class="footer"><span>© 2026 MakanPop! · Eat. Pop. Discover.</span><span>V5 POP EDITION · 真实地点数据来自 <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">© OpenStreetMap contributors（ODbL）</a> · 实际就餐前请核对价格与食材</span></footer>
 </div>
 <div class="backdrop" id="themeModal" role="dialog" aria-modal="true" aria-labelledby="themeTitle"><div class="modal"><div class="modal-top"><h2 id="themeTitle">🎨 把 MakanPop 变成你的颜色</h2><button class="x" id="closeTheme" aria-label="关闭">×</button></div><p class="muted">换颜色不会影响筛选条件或黑名单，下次打开还会保留。</p><div class="theme-grid" id="themeGrid"></div><div class="color-row">自定义主色 <input type="color" id="customColor" aria-label="自定义主色" value="#ed625b"></div><button class="btn secondary" id="resetTheme" style="width:100%">恢复默认红白配色</button></div></div>
 <div class="toast" role="status" aria-live="polite" id="toast"></div>
