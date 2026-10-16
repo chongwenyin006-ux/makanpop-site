@@ -1,52 +1,27 @@
-# MakanPop V6 — The Food Playground
+# MakanPoP V8 — Cinematic Café Gacha
 
-A completely redesigned interactive food gacha website. The original design is inspired by the *creative direction* of editorial, collage-based, motion-rich sites, without copying Trevor Noah's graphics, brand, typography assets, or source code.
+本版本基于你选择的视觉参考图，重构成可运行的页面。
 
-## What is new
+## 关键区别
+- 首页图形素材中，机器提取自你给的参考图片；可以点击或拖动的旋钮、导航、地点、筛选和结果是网页元素。
+- 正确名称：**MakanPoP**。
+- 左侧品牌文案 + 中央巨型图片机器 + 右侧三行设置，手机独立排版。
+- 复用 V7 的真实餐厅 API、Klang 地区列表、Google Maps 导航、BlackList 和主题切换。
+- 这不是完整 3D 网格模型，也没有真正的物理碰撞。转动与出球是 CSS 动画。
 
-- **Brand-new art direction:** bold editorial typography, navy / pink / lime palettes, animated sticker collage, layered capsule hero, kinetic ribbon and responsive layout.
-- **Four clear steps:** location, 26 food categories, dislikes, budget & distance (instead of everything being crammed into the home screen).
-- **9 mood tags and 10 additional avoidance/dietary concerns** (currently stored as preferences only: *not* hard filtering unless verified item tags exist).
-- **Actual nearby places:** uses the existing `/api/restaurants` server route and OpenStreetMap/Overpass data. It does **not** fabricate restaurants, ratings or menus when the live query fails.
-- **Current location and 32 manually selectable Malaysian areas**, including Klang, Bandar Bukit Tinggi, Bandar Botanic, Setia Alam and KL.
-- **Blacklist**, **personal price notes** and **4 user-selectable themes** stored in the current browser.
-- **Restaurant gallery** of real loaded places, with distance, map links, and simple sorting.
-- **Responsive desktop / mobile**, user-controlled motion reduction support.
+## 在 StackBlitz 使用
+将 ZIP 解压后，**把里面的文件和文件夹**复制到本地 GitHub Desktop 的 `makanpop-site` 文件夹根目录，覆盖同名文件。
+然后 Commit → Push，并在 StackBlitz 重新打开项目。
+运行 `npm run dev`，预览 `http://localhost:3000`。
 
-## Run in StackBlitz (the existing project)
+## 真实餐厅 & GPS
+`/api/restaurants` 在 StackBlitz 由 `server.mjs` 提供，在 Cloudflare Pages 由 Pages Functions 提供。
+真实餐厅来自 OpenStreetMap Overpass，公开服务仍可能限流、超时，餐厅价格往往没有提供。
+GPS 需要浏览器定位授权、HTTPS/localhost 安全上下文。避免在受限 iframe 测试。
+不会在餐厅查询失败时生成假店名。
 
-1. Download and extract the ZIP.
-2. Copy everything inside the extracted folder, including `lib/`, `functions/`, `public/`, `server.mjs`, `package.json`, `README.md`, `.gitignore`, into the local `makanpop-site` GitHub repository. Replace existing files.
-3. Commit the changes (`Redesign MakanPop V6 Food Playground`) and `Push origin` in GitHub Desktop.
-4. Refresh `https://stackblitz.com/github/lazycat-elyn/makanpop-site` (open the site preview in its own tab when trying GPS).
-5. Node preview: `npm run dev` then visit the port 3000 preview.
+## 部署至 Cloudflare Pages
+GitHub Connect to Git；Framework: None；Build command: `exit 0`；Output dir: `public`。
 
-## Cloudflare Pages deployment
-
-Connect repository to Cloudflare Pages with:
-- Framework: None
-- Build command: `exit 0`
-- Build output directory: `public`
-- Use Pages Functions found in `functions/api/restaurants.js` and shared logic under `lib/`.
-
-## Important limitations
-
-- The restaurants API is an experimental **free public OpenStreetMap Overpass service**. It is not guaranteed to return data reliably, and some restaurants may not be mapped. Public API usage limits apply. For a larger audience, use a compliant managed data provider or host a suitable read-optimized copy.
-- Browser GPS requires HTTPS, user permission, and compatible browser embedding. A manually selected place uses its *approximate center*, not the user's precise coordinates.
-- Cuisine tags in OSM are inconsistent or missing. Strict 'want/avoid cuisine' filters can return 0 results; this is surfaced to the user instead of inventing matches.
-- **Mood, spice, allergens, religious diet/halal, vegetarianity and ingredients** cannot reliably be verified from free OSM tags. These preferences are stored but deliberately *not* used to claim a restaurant is safe or suitable. Ask the restaurant to confirm details.
-- '24/7 only' only checks places *explicitly marked `24/7`*. It is not a fully accurate 'open now' parser.
-- Price filter uses **only personal prices the user entered**; absence is displayed clearly. The personal price is not a verified restaurant menu price.
-- Restaurant selection is random from loaded matching results. The CSS gacha provides a visual interactive sequence, not a physics-based 3D model.
-- Branding original to MakanPop; Google Maps is only used for outbound navigation. Data attribution to © OpenStreetMap contributors remains visible.
-
-## Project files
-
-- `public/index.html` — whole front end (HTML / CSS / JavaScript)
-- `server.mjs` — local Node preview server
-- `lib/restaurant-query.mjs` — input validation and Overpass queries
-- `functions/api/restaurants.js` — Cloudflare Pages Functions API
-- `public/_routes.json` — route configuration
-- `package.json` — no external runtime packages
-
-This is a *prototype* ready for user testing, not a production-grade restaurant directory. Before publicly scaling, validate the map-data terms, privacy and rate limits and improve coverage.
+## 版权及素材
+视觉素材从用户在对话中提供的 MakanPoP 参考视觉制作，用于本网站的设计原型。图片内印刷小字属于机器素材；其它文案和按钮都是真实网页元素。
