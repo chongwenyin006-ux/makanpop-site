@@ -32,7 +32,84 @@ function openPanel(type){page=type;$('panelTitle').textContent=type==='filters'?
 function choosePlace(q){const term=String(q||'').trim().toLowerCase();const loc=LOCS.find(x=>x[0].toLowerCase()===term)||LOCS.find(x=>x[0].toLowerCase().includes(term)&&term.length>=3);if(!loc){toast('没有找到这个地区，请从列表选择或用 GPS。');return}s.location={name:loc[0],lat:loc[1],lon:loc[2],kind:'preset'};s.cacheKey='';s.places=[];s.recent=[];refresh();status('已选 '+loc[0]+'，点击 START GACHA 查询附近真实餐厅');openPanel('filters');toast('地点已更新：'+loc[0])}
 async function gps(){if(!window.isSecureContext||!navigator.geolocation){toast('GPS 需要 HTTPS 和浏览器定位权限。');return}status('正在请求位置权限…');try{const pos=await new Promise((ok,fail)=>navigator.geolocation.getCurrentPosition(ok,fail,{enableHighAccuracy:false,timeout:16000,maximumAge:300000}));s.location={name:'我的 GPS 位置',lat:pos.coords.latitude,lon:pos.coords.longitude,kind:'gps'};s.cacheKey='';s.places=[];s.recent=[];refresh();if($('panel').open)openPanel('filters');status('GPS 定位成功，点击 START GACHA 获取附近餐厅');toast('定位成功！')}catch(e){const msg=e.code===1?'定位权限被拒绝，请允许浏览器使用位置':e.code===2?'目前无法获取设备位置':e.code===3?'GPS 定位超时':'定位失败';status(msg,true);toast(msg)}}
 function key(){return [s.location.lat.toFixed(3),s.location.lon.toFixed(3),s.radius].join(':')}
-async function fetchPlaces(){const k=key();if(s.cacheKey===k&&s.places.length)return true;status('正在查询 '+s.location.name+' 的真实餐厅，请稍等…');try{const q=new URLSearchParams({lat:s.location.lat,lon:s.location.lon,radius:s.radius});const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),54000);let response;try{response=await fetch('/api/restaurants?'+q.toString(),{signal:controller.signal,cache:'no-store'})}finally{clearTimeout(timer)}const data=await response.json().catch(()=>({}));if(!response.ok)throw Error(data.error||'查询服务器未正常回应');if(!Array.isArray(data.elements))throw Error('查询返回的餐厅资料格式错误');s.places=normalize(data.elements);s.cacheKey=k;s.recent=[];status('从 OpenStreetMap 取得 '+s.places.length+' 家附近真实地点');return true}catch(e){s.places=[];s.cacheKey='';const m=e.name==='AbortError'?'地图服务回应超时，请稍后再试':e.message;status('餐厅查询失败：'+m,true);toast(m+'。没有使用虚构餐厅。');return false}}
+const CACHE_PREFIX='makanpop.osm.lookup.v1.';
+function readRestaurantCache(k,maxAge=7*86400000){
+  try{
+    const item=JSON.parse(localStorage.getItem(CACHE_PREFIX+k)||'null');
+    if(item&&Array.isArray(item.elements)&&Number.isFinite(item.at)&&Date.now()-item.at<maxAge)return item;
+  }catch(e){}
+  return null;
+}
+function writeRestaurantCache(k,elements){
+  try{localStorage.setItem(CACHE_PREFIX+k,JSON.stringify({at:Date.now(),elements:elements.slice(0,300)}))}catch(e){}
+}
+async function fetchJsonWithDeadline(url,ms,opts={}){
+  const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),ms);
+  try{
+    const response=await fetch(url,{...opts,signal:ctrl.signal,cache:'no-store'});
+    if(!response.ok){
+      let message='HTTP '+response.status;
+      try{const result=await response.json();message=result.error||message}catch(e){}
+      throw Error(message);
+    }
+    const json=await response.json();
+    if(!json||!Array.isArray(json.elements))throw Error('餐厅资料格式不正确');
+    return json;
+  }finally{clearTimeout(timer)}
+}
+function useRestaurantData(elements,k,label){
+  s.places=normalize(elements);s.cacheKey=k;s.recent=[];
+  status(label+'：找到 '+s.places.length+' 家真实餐厅记录');
+  return true;
+}
+async function fetchPlaces(){
+  const k=key();
+  if(s.cacheKey===k&&s.places.length)return true;
+  // A short-term cache avoids repeatedly loading public Overpass servers.
+  const fresh=readRestaurantCache(k,30*60000);
+  if(fresh)return useRestaurantData(fresh.elements,k,'已读取最近缓存的地图资料');
+  const q=new URLSearchParams({lat:s.location.lat,lon:s.location.lon,radius:s.radius});
+  const errors=[];
+  status('正在查找 '+s.location.name+' 的真实餐厅…');
+  try{
+    const data=await fetchJsonWithDeadline('/api/restaurants?'+q.toString(),25000);
+    writeRestaurantCache(k,data.elements);
+    return useRestaurantData(data.elements,k,'地图查询成功');
+  }catch(e){errors.push('站内接口 '+e.message)}
+  // StackBlitz WebContainers can fail when proxying cross-origin server requests.
+  // Browsers are allowed to query Overpass directly with CORS, subject to limits.
+  const query='[out:json][timeout:15];nwr(around:'+s.radius+','+
+    (Math.round(s.location.lat*1000)/1000)+','+
+    (Math.round(s.location.lon*1000)/1000)+
+    ')[amenity~"^(restaurant|cafe|fast_food|food_court|ice_cream)$"][name];out center 450;';
+  const endpoints=[
+    'https://overpass.private.coffee/api/interpreter',
+    'https://overpass-api.de/api/interpreter'
+  ];
+  for(const endpoint of endpoints){
+    status('站内连接失败，正在尝试备用地图查询…');
+    try{
+      const url=endpoint+'?data='+encodeURIComponent(query);
+      const data=await fetchJsonWithDeadline(url,15000,{mode:'cors',credentials:'omit'});
+      writeRestaurantCache(k,data.elements);
+      return useRestaurantData(data.elements,k,'备用地图查询成功');
+    }catch(e){errors.push('备用服务 '+e.message)}
+  }
+  const previous=readRestaurantCache(k);
+  if(previous){
+    const stamp=new Date(previous.at).toLocaleString('zh-MY');
+    useRestaurantData(previous.elements,k,'当前地图服务不可用，使用之前获取的真实餐厅缓存');
+    toast('当前网络查询失败，已使用 '+stamp+' 保存的地图记录。餐厅资料可能已变动。');
+    return true;
+  }
+  s.places=[];s.cacheKey='';
+  const message='无法连上免费地图服务器（不是 Klang 没有餐厅）。请稍后重试，或在正式 HTTPS 网站测试。';
+  status(message,true);
+  toast(message);
+  console.warn('MakanPoP restaurant lookup failed:',errors.join(' | '));
+  return false;
+}
+
 function wait(ms){return new Promise(r=>setTimeout(r,ms))}
 async function spin(){if(s.busy)return;s.busy=true;$('spin').disabled=true;$('spin').textContent='正在寻找美食…';try{if(!(await fetchPlaces()))return;const candidates=eligible();if(!candidates.length){const txt=s.places.length?'没有符合当前筛选的餐厅。试试取消食物偏好、扩大预算或允许未知价格。':'这个范围没有取得餐厅记录。试试增加搜索距离或换一个地点。';status(txt,true);toast(txt);return}const unseen=candidates.filter(x=>!s.recent.includes(x.id));const pool=unseen.length?unseen:candidates;const p=pool[Math.floor(Math.random()*pool.length)];s.recent=[p.id,...s.recent].slice(0,Math.min(6,candidates.length-1));s.current=p;const machine=$('machine');machine.classList.add('spinning');status('转出一颗美食胶囊中…');await wait(1850);machine.classList.remove('spinning');result(p);status('抽中了 '+p.name+' · 来自真实地图资料')}finally{$('machine').classList.remove('spinning');s.busy=false;$('spin').disabled=false;$('spin').textContent='◉ START GACHA ↗'}}
 function result(p){const cuisine=String(p.tags.cuisine||'').replaceAll(';',' / ')||({cafe:'咖啡馆',fast_food:'快餐',restaurant:'餐厅',food_court:'美食广场',ice_cream:'冰淇淋'}[p.tags.amenity]||'餐饮地点');$('resultName').textContent=p.name;$('resultType').textContent=cuisine;$('resultDist').textContent=(p.dist/1000).toFixed(1)+' km';$('resultAddress').textContent=p.address||'地图坐标 '+p.lat.toFixed(5)+', '+p.lon.toFixed(5);const price=Number(s.prices[p.id]);$('resultPrice').textContent=price>0?'你记录的人均 RM'+price:'价格未知';$('resultNote').textContent=price>0?'这是你自己的消费记录，不是餐厅官方菜单报价。':'OpenStreetMap 没有提供可核实的菜单价格；当前预算可能不匹配。';$('navLink').href='https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(p.lat+','+p.lon);$('favAction').textContent=s.favorites.some(x=>x.id===p.id)?'♥ 已收藏':'♡ 收藏';$('blackAction').textContent=s.blacklist.some(x=>x.id===p.id)?'✓ 已 Blacklist':'⊘ Blacklist';$('spendForm').hidden=true;$('result').showModal()}
