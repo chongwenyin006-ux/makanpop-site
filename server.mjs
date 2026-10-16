@@ -4,6 +4,7 @@ import http from 'node:http';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import {fetchRestaurantData} from './lib/restaurant-query.mjs';
 
 const projectDir = path.dirname(fileURLToPath(import.meta.url));
 const staticDir = path.resolve(projectDir, 'public');
@@ -13,6 +14,16 @@ const types = { '.html':'text/html; charset=utf-8', '.css':'text/css; charset=ut
 http.createServer(async (req, res) => {
   try {
     const url = new URL(req.url || '/', 'http://localhost');
+    if(url.pathname === '/api/restaurants'){
+      try{
+        const data=await fetchRestaurantData(url.searchParams);
+        res.writeHead(200,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'public, max-age=900'});
+        return res.end(JSON.stringify(data));
+      }catch(e){
+        res.writeHead(e.status||502,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store'});
+        return res.end(JSON.stringify({error:e.message||'查询失败'}));
+      }
+    }
     const name = decodeURIComponent(url.pathname);
     const file = path.resolve(staticDir, '.' + (name === '/' ? '/index.html' : name));
     if (file !== staticDir && !file.startsWith(staticDir + path.sep)) {

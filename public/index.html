@@ -168,6 +168,7 @@
           <div class="field"><label>📍 你想从哪里找餐厅？</label>
             <div class="mini-actions"><button class="btn" id="realLocation">📍 使用我的 GPS 位置</button><button class="btn secondary" id="refreshArea" disabled>↻ 重新查询</button></div>
             <div class="area-select"><label for="areaPreset" class="area-label">或选择马来西亚地区（大概中心点）</label><div class="area-grid"><select class="input" id="areaPreset" aria-label="选择地区"><option value="">请选择地区...</option><option value="3.2078,101.7210,Setapak / 文良港">Setapak / 文良港</option><option value="3.2010,101.7390,Wangsa Maju / 旺沙玛珠">Wangsa Maju / 旺沙玛珠</option><option value="3.2111,101.6367,Kepong / 甲洞">Kepong / 甲洞</option><option value="3.0919,101.7414,Cheras / 蕉赖">Cheras / 蕉赖</option><option value="3.1466,101.7106,Bukit Bintang / 武吉免登">Bukit Bintang / 武吉免登</option><option value="3.1070,101.6067,Petaling Jaya / 八打灵再也">Petaling Jaya / 八打灵再也</option><option value="1.4939,103.7414,Johor Bahru / 新山">Johor Bahru / 新山</option><option value="5.4164,100.3327,George Town / 槟城">George Town / 槟城</option><option value="4.5975,101.0901,Ipoh / 怡保">Ipoh / 怡保</option><option value="1.5533,110.3592,Kuching / 古晋">Kuching / 古晋</option><option value="5.9804,116.0735,Kota Kinabalu / 亚庇">Kota Kinabalu / 亚庇</option></select><button class="btn secondary" id="searchArea">找附近餐厅 →</button></div></div>
+            <div id="previewHint" class="source-note" hidden style="margin-top:12px">🔒 如果 GPS 在 StackBlitz 预览里无法使用，请点击预览右上角 ↗，在新标签页打开网站。<a id="previewLink" target="_blank" rel="noopener noreferrer" href="#" style="text-decoration:underline">在新标签打开 ↗</a></div>
             <div id="locationStatus" class="status" role="status" aria-live="polite">尚未读取餐厅。GPS 需要 HTTPS 网站及定位权限；不方便定位的话，可以选择一个地区。</div>
             <p class="helper">完全免费：根据 GPS 或地区中心点查询 OpenStreetMap 真实地点。GPS 坐标会传给公共查询服务，未经点击不会自动定位。列表、分类可能不完整；不收集你的个人 Blacklist。</p>
           </div>
@@ -190,7 +191,7 @@
     <section id="resultSection" class="section results-box" aria-live="polite"><div class="section-heading"><div><span class="section-overline">02 / THE REVEAL</span><h2>哇！你抽中了！ <span class="heading-accent">✳</span></h2><p>命运决定好了，要不要去吃？</p></div></div><div id="resultCard" class="result-card"></div></section>
     <section id="blacklist" class="section"><div class="section-heading"><div><h2>你的 Blacklist ⛔</h2><p>不想再抽到的餐厅，都放在这里。</p></div><button class="btn secondary" id="clearExpired">清除过期记录</button></div><div id="blacklistItems"></div></section>
   </main>
-  <footer class="footer"><span>© 2026 MakanPop! · Eat. Pop. Discover.</span><span>V5 POP EDITION · 真实地点数据来自 <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">© OpenStreetMap contributors（ODbL）</a> · 实际就餐前请核对价格与食材</span></footer>
+  <footer class="footer"><span>© 2026 MakanPop! · Eat. Pop. Discover.</span><span>V5.1 GPS FIX · 真实地点数据来自 <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">© OpenStreetMap contributors（ODbL）</a> · 实际就餐前请核对价格与食材</span></footer>
 </div>
 <div class="backdrop" id="themeModal" role="dialog" aria-modal="true" aria-labelledby="themeTitle"><div class="modal"><div class="modal-top"><h2 id="themeTitle">🎨 把 MakanPop 变成你的颜色</h2><button class="x" id="closeTheme" aria-label="关闭">×</button></div><p class="muted">换颜色不会影响筛选条件或黑名单，下次打开还会保留。</p><div class="theme-grid" id="themeGrid"></div><div class="color-row">自定义主色 <input type="color" id="customColor" aria-label="自定义主色" value="#ed625b"></div><button class="btn secondary" id="resetTheme" style="width:100%">恢复默认红白配色</button></div></div>
 <div class="toast" role="status" aria-live="polite" id="toast"></div>
@@ -210,6 +211,8 @@
   const unwanted=['辣','炸物','火锅','海鲜','牛肉','奶类','快餐','甜品'];
   const safeJson = (key,fallback) => {try {const v=JSON.parse(localStorage.getItem(key));return v??fallback}catch{return fallback}};
   const settings=Object.assign({budget:35,distance:5,want:[],avoid:[],allowUnknown:true,strictTaste:false},safeJson('makanpop_settings',{}));
+  // StackBlitz preview uses a cross-origin iframe where geolocation may be blocked.
+  try{if(window.top!==window.self){$('previewHint').hidden=false;$('previewLink').href=location.href;}}catch(_){$('previewHint').hidden=false;$('previewLink').href=location.href;}
   const state={mode:'idle',provider:null,items:[],lat:null,lon:null,location:'尚未定位',loadedRadius:0,accuracy:null,lastId:null,seen:[],busy:false,result:null,blocks:safeJson('makanpop_blocks',[]),theme:safeJson('makanpop_theme','coral'),custom:safeJson('makanpop_custom',null),personalPrices:safeJson('makanpop_my_prices',{})};
   const store=()=>{localStorage.setItem('makanpop_settings',JSON.stringify(settings));localStorage.setItem('makanpop_blocks',JSON.stringify(state.blocks))};
   const roundKm=km=>`${Number(km).toFixed(1)} km`;
@@ -303,21 +306,23 @@
   }
   const rad=d=>d*Math.PI/180;
   function haversine(lat,lon,a,b){const dx=rad(a-lat),dy=rad(b-lon);const v=Math.sin(dx/2)**2+Math.cos(rad(lat))*Math.cos(rad(a))*Math.sin(dy/2)**2;return 6371*2*Math.atan2(Math.sqrt(v),Math.sqrt(1-v));}
-  async function loadReal(lat,lon,label){
+  async function loadReal(lat,lon,label,forceRefresh=false){
     $('realLocation').disabled=true;$('searchArea').disabled=true;$('refreshArea').disabled=true;
     $('locationStatus').textContent=`正在通过 OpenStreetMap 查找 ${label} 附近餐厅…`;
     try{
       const cacheKey=`makanpop_osm_v4_${lat.toFixed(3)}_${lon.toFixed(3)}_${settings.distance}`;
       let data=safeJson(cacheKey,null);
-      let fromCache=Boolean(data && Array.isArray(data.elements) && Date.now()-data.at<6*60*60*1000);
+      let fromCache=Boolean(!forceRefresh && data && Array.isArray(data.elements) && data.elements.length>0 && Date.now()-data.at<6*60*60*1000);
       if(!fromCache){
         const radius=Math.max(1000,Math.min(10000,settings.distance*1000));
-        const query=`[out:json][timeout:24];nwr(around:${radius},${lat},${lon})[amenity~"^(restaurant|cafe|fast_food|food_court|ice_cream)$"][name];out center 500;`;
-        const ac=new AbortController();const timer=setTimeout(()=>ac.abort(),25000);
+        const url=`/api/restaurants?lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lon)}&radius=${radius}`;
+        const ac=new AbortController();const timer=setTimeout(()=>ac.abort(),54000);
         try{
-          const response=await fetch('https://overpass-api.de/api/interpreter',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8'},body:new URLSearchParams({data:query}),signal:ac.signal});
-          if(!response.ok)throw new Error(response.status===429?'公开服务访问频繁，请稍后再试':`公开服务暂时不可用 (${response.status})`);
-          const json=await response.json();if(!Array.isArray(json.elements))throw new Error('地图服务未返回可用资料');
+          const response=await fetch(url,{signal:ac.signal});
+          let json;
+          try{json=await response.json()}catch(_){throw new Error('餐厅查询接口未启用。请部署完整项目，包含 functions 文件夹。')}
+          if(!response.ok)throw new Error(json.error||`餐厅查询失败 (${response.status})`);
+          if(!Array.isArray(json.elements))throw new Error('地图服务未返回可用资料');
           data={at:Date.now(),elements:json.elements};
           try{localStorage.setItem(cacheKey,JSON.stringify(data))}catch(_){/* Browser storage is optional */}
         }finally{clearTimeout(timer)}
@@ -338,15 +343,15 @@
       $('locationStatus').textContent=`${label}${state.accuracy&&label.includes('我的位置')?' · 定位精度约 ±'+Math.round(state.accuracy)+' 米':''} · ${items.length} 家地图餐厅${fromCache?'（使用6小时内缓存）':''}。查询最多读取500个地点，可能遗漏部分店铺。`;
       renderChips();paintBlocks();toast(items.length?`找到 ${items.length} 家真实地点！`:'这一区域暂时没有读到餐厅，可改大距离');
     }catch(err){
-      const reason=err.name==='AbortError'?'查询超时（公开服务较忙）':err.message;
-      $('locationStatus').textContent=`查询失败：${reason}。可以稍后重试或切换示例试玩；不会用假店冒充真实餐厅。`;
+      const reason=err.name==='AbortError'?'查询超时（公开地图服务较忙）':err.message;
+      $('locationStatus').textContent=`餐厅查询失败：${reason}。你可以稍后重试，或换一个地区；不会显示虚构餐厅。`;
       toast('无法取得真实餐厅资料，请稍后重试');
     }finally{$('realLocation').disabled=false;$('searchArea').disabled=false;$('refreshArea').disabled=state.mode!=='real';}
   }
   function startReal(){
-    if(!window.isSecureContext){$('locationStatus').textContent='⚠ GPS 定位必须在 HTTPS 网站或 localhost 运行。请先发布到 Cloudflare Pages，或手动选择地区。';toast('GPS 需要 HTTPS 网址才能使用');return;}if(!navigator.geolocation){toast('浏览器不支持定位，请选择一个地区。');return}
+    if(!window.isSecureContext){$('locationStatus').textContent='⚠ GPS 需要 HTTPS 或 localhost，请在浏览器新标签页打开 HTTPS 网址，或者手动选择地区。';toast('GPS 需要 HTTPS 网址才能使用');return;}if(!navigator.geolocation){toast('浏览器不支持定位，请选择一个地区。');return}
     $('locationStatus').textContent='正在请求定位权限…';$('realLocation').disabled=true;
-    navigator.geolocation.getCurrentPosition(pos=>{(state.accuracy=pos.coords.accuracy,loadReal(pos.coords.latitude,pos.coords.longitude,'我的位置附近'))},err=>{$('realLocation').disabled=false;$('locationStatus').textContent='无法取得定位：'+(err.code===1?'定位权限被拒绝，请在浏览器设置中允许访问位置':err.code===3?'定位超时，请打开手机定位服务并重试':err.message)+'。也可以手动选择地区。';toast('定位失败，请选择地区。')},{enableHighAccuracy:true,timeout:18000,maximumAge:30000});
+    navigator.geolocation.getCurrentPosition(pos=>{(state.accuracy=pos.coords.accuracy,loadReal(pos.coords.latitude,pos.coords.longitude,'我的位置附近'))},err=>{$('realLocation').disabled=false;$('locationStatus').textContent='无法取得定位：'+(err.code===1?'定位权限被拒绝或预览窗口不允许 GPS；请在独立标签页打开，并允许浏览器定位':err.code===3?'定位超时，请检查设备定位设置，或尝试降低定位精度后重试':err.message)+'。也可以手动选择地区。';toast('定位失败，请选择地区。')},{enableHighAccuracy:true,timeout:18000,maximumAge:30000});
   }
   function scrollTo(id){document.getElementById(id)?.scrollIntoView({behavior:'smooth',block:'start'})}
   document.querySelectorAll('[data-scroll]').forEach(el=>el.addEventListener('click',()=>scrollTo(el.dataset.scroll)));
@@ -355,7 +360,7 @@
   $('strictTaste').addEventListener('change',ev=>{settings.strictTaste=ev.target.checked;store();renderChips()});
   $('searchArea').addEventListener('click',()=>{const value=$('areaPreset').value;if(!value){toast('请先选择地区');return}const [lat,lon,...names]=value.split(',');loadReal(Number(lat),Number(lon),names.join(','));});
   $('homeSpin').addEventListener('click',()=>state.mode==='real'?spin():startReal());$('filterSpin').addEventListener('click',spin);$('machineKnob').addEventListener('click',spin);
-  $('realLocation').addEventListener('click',startReal);$('refreshArea').addEventListener('click',()=>state.lat!=null?loadReal(state.lat,state.lon,state.location):toast('请先选择地点'));$('nearbyList').addEventListener('click',ev=>{const el=ev.target.closest('[data-mapid]');if(!el)return;const item=state.items.find(item=>item.id===el.dataset.mapid);if(item)openMap(item);});
+  $('realLocation').addEventListener('click',startReal);$('refreshArea').addEventListener('click',()=>state.lat!=null?loadReal(state.lat,state.lon,state.location,true):toast('请先选择地点'));$('nearbyList').addEventListener('click',ev=>{const el=ev.target.closest('[data-mapid]');if(!el)return;const item=state.items.find(item=>item.id===el.dataset.mapid);if(item)openMap(item);});
   $('exportPrices').addEventListener('click',()=>{const data=JSON.stringify({app:'MakanPop',type:'personal-price-records',createdAt:new Date().toISOString(),prices:state.personalPrices},null,2);const blob=new Blob([data],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='makanpop-my-prices.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);toast('已导出价格记录 JSON');});
   $('clearPrices').addEventListener('click',()=>{if(!Object.keys(state.personalPrices).length){toast('没有需要清除的价格记录');return;}if(!confirm('确定清除这个浏览器里全部个人价格记录？'))return;state.personalPrices={};localStorage.removeItem('makanpop_my_prices');renderChips();if(state.result)renderResult(state.result,false);toast('已清除本地价格记录');});
   $('blacklistItems').addEventListener('click',ev=>{const btn=ev.target.closest('[data-remove]');if(!btn)return;state.blocks=state.blocks.filter(b=>b.id!==btn.dataset.remove);store();paintBlocks();renderChips();toast('已从 Blacklist 移除')});

@@ -1,69 +1,38 @@
-# MakanPop! V5 — POP EDITION
+# MakanPop V5.1 — GPS + Real Restaurants repair
 
-视觉升级：Premium Playful 潮玩扭蛋风。保留 V4 的 GPS、附近真实 OpenStreetMap 餐厅、预算/偏好筛选、Blacklist、个人消费记录、主题色切换等代码功能。没有额外要求 API Key，也没有添加付费服务。
+本版本沿用 V5 POP Edition 外观与 Blacklist、扭蛋、RM 筛选等功能，并改进了**真实餐厅获取**：
 
-**快速开始**：解压全部文件后，将 `.gitignore`、`package.json`、`public`、`server.mjs` 和 `README.md` 复制到原本的 GitHub `makanpop-site` 项目文件夹，替换旧文件；然后在 GitHub Desktop Commit 和 Push。
+- **StackBlitz 开发预览**：`server.mjs` 自带 `/api/restaurants`，后端代替浏览器向 Overpass 查询，减少前端跨域限制。
+- **Cloudflare Pages 正式部署**：根目录的 `functions/api/restaurants.js` 提供同名接口，保留原来 `public` 作为部署目录。必须通过 **GitHub 连接 Cloudflare Pages** 部署 Functions；Cloudflare Dashboard 的静态 Direct Upload 不会部署 Functions。
+- 仍采用真实的 OpenStreetMap 数据，遇到限制、超时或无结果不会造假。
+- 对 GPS 被预览 iframe 拒绝增加了提示和「新标签打开」链接。**使用真实 GPS 时强烈建议在浏览器新标签打开预览，或者正式部署到 HTTPS Pages 域名。**
+- 用户的个人金额和 Blacklist 仍存在浏览器 localStorage；地图坐标会传递给公共 Overpass 服务用于查询。
 
-**StackBlitz**：用 `https://stackblitz.com/github/你的GitHub用户名/makanpop-site` 打开。需要 HTTPS 及定位授权才可使用 GPS；公开 Overpass 服务需要联网，可能限流或暂时不可用。
+## 安装更新：不要重新创建 GitHub 项目
 
-**部署 Cloudflare Pages**：Framework None，Build command `exit 0`，Output directory `public`。
+1. 解压本 ZIP。
+2. 在 GitHub Desktop `makanpop-site` 点击 **Repository → Show in Explorer**。
+3. 将解压出来的 `public/`、`functions/`、`lib/`、`server.mjs`、`package.json`、`.gitignore` 和 `README.md` 复制到仓库根目录（与 `.git` 文件夹平级）。如有询问，选择替换原文件。
+4. GitHub Desktop 中 Summary 写 `Fix GPS and real restaurant API`，按 **Commit to main**，再按 **Push origin**。
+5. 重新打开 https://stackblitz.com/github/lazycat-elyn/makanpop-site （必要时刷新 / 重新导入）。
+6. 预览区右上角点击 **↗** 在浏览器独立标签页打开网站；点击 `📍 使用我的 GPS 位置` 并允许位置权限。
+7. GPS 仍不行？在筛选页选择 Setapak 等地区，点击「找附近餐厅」来**独立测试餐厅接口**。如果手动地区也失败，查看网站提示的具体错误并截图发送。
 
-**注意**：这是 CSS 立体视觉扭蛋机，不是物理引擎 3D；餐厅价格及菜单数据并不完整。新版外观未修改餐厅筛选业务逻辑。
+## 免费发布到 Cloudflare Pages
 
-# MakanPop! — StackBlitz + GitHub + Cloudflare Pages
+- GitHub 集成仓库：`lazycat-elyn/makanpop-site`
+- Framework：None
+- Build command：`exit 0`
+- Build output directory：`public`
+- 根目录 `functions/api/restaurants.js` 会自动识别为 Pages Function。根目录 `lib/restaurant-query.mjs` 会被一起打包。
+- 不需要 Google Places API Key。Cloudflare Functions 免费方案和 OpenStreetMap 公共 Overpass 有配额及限制，不保证高流量下稳定。
 
-基于 **MakanPop V4**：真实 OpenStreetMap 餐厅、GPS、RM 预算（仅有记录时能可靠筛选）、Blacklist、可更换主题、互动扭蛋机。
+## 排错提示
 
-## 文件说明
+- **GPS 权限被拒绝**：先检查 Chrome 地址栏左侧的位置权限；Windows「位置服务」也要启用。尽量用独立标签页，不要直接在 StackBlitz 右侧 iframe 测试。
+- **餐厅 API 未启用**：检查 `functions/`、`lib/`、`server.mjs` 是否都复制到仓库根目录，且 StackBlitz 已重启开发服务器。
+- **地图服务错误 / 超时 / 429**：这是公共地图服务临时不可用或访问受限，稍后重试或选择较小的半径。
+- **真实餐厅数量为 0**：OSM 没有匹配到地点，放宽筛选、扩大范围或换地区；不会使用虚构餐厅填充。
+- **某店价格待确认**：OSM 常不提供人均 RM 价格；只有个人已记账的价格可用于严格预算筛选。
 
-- `public/index.html` — 真实网站，所有界面与功能都在这里；**这是最主要的修改文件**。
-- `server.mjs` — StackBlitz 本地预览工具，不上传到网站服务器执行。
-- `package.json` — StackBlitz 自动运行配置。无需安装额外 npm 套件。
-- `.gitignore` — 避免上传临时文件。
-
-## 第一步：创建 GitHub 仓库
-
-1. 登录 https://github.com/new
-2. Repository name: `makanpop-site`；为了免费用 StackBlitz GitHub 导入，选择 **Public**。
-3. 建立空仓库（不要先自动生成 README，以免第一步冲突）。
-4. 在新仓库点 **Add file → Upload files**；先在电脑解压本 ZIP，然后将解压后的**内容**（包括 `public` 文件夹）上传至仓库根目录，并 Commit changes。
-5. **重要**：GitHub 首页应该看到 `public/`、`server.mjs`、`package.json`、`README.md`。不要把整个 ZIP 当成一个文件上传。
-
-> Public 仓库代表所有人都可以看源码。不要把密码、私人地址或任何 API 密钥存入仓库。
-
-## 第二步：用 StackBlitz 打开项目
-
-将你的真实 GitHub 用户名和仓库名代入链接：
-
-`https://stackblitz.com/github/你的GitHub用户名/makanpop-site`
-
-StackBlitz 会自动识别 `package.json`，启动 `npm run dev`（端口 3000），就能看到网站预览。
-编辑 `public/index.html` 便可修改网站。
-
-**注意**：GitHub 导入的 StackBlitz 预览不一定把修改自动保存回 GitHub。编辑后必须保存/提交到 GitHub，才会更新正式网站。对于初学者，先在 GitHub 网页按铅笔图标修改 `public/index.html` 并 Commit，然后 StackBlitz 刷新查看最不容易混淆。
-
-## 第三步：Cloudflare Pages 连接 GitHub
-
-1. 登录 https://dash.cloudflare.com/ → **Workers & Pages → Create application → Pages → Connect to Git**。
-2. 授权 GitHub 并选择 `makanpop-site` 仓库。
-3. 设置（不要套用 Next.js 模板）：
-   - Production branch: `main`
-   - Framework preset: `None` / 无
-   - Build command: `exit 0`
-   - Build output directory: `public`
-4. Deploy。发布后你会得到一个 `*.pages.dev` 的 HTTPS 网址（准确名字要由 Cloudflare 确定）。
-5. 往后 GitHub `main` 分支有新提交，Cloudflare 会自动更新网站。
-
-## 测试真实 GPS 和餐厅
-
-- 必须在 HTTPS 公开网址上点击「使用我的 GPS 位置」并允许定位（StackBlitz 预览的 iframe 可能限制地理定位）。
-- 无法授权 GPS 时改用页面上预设的 Setapak、Kepong、Cheras 等地区查询。
-- 网站使用公开 Overpass API 拉取 OpenStreetMap 的真实 POI（不需要 Google 密钥）。网络服务可能被限流、暂时关闭或资料不完整，因此不能保证每个地区总能查询成功。
-- 餐厅位置与营业状况可能过时；没有实时人均 RM 价格或 Google 评分。自己的消费金额可存在浏览器，其他访客不会共享。
-- 网站不上传用户的 Blacklist；它存放于当前浏览器的 localStorage。换设备不会自动同步。
-
-## 费用说明
-
-本项目没有付费 API 依赖。GitHub、StackBlitz 和 Cloudflare 的免费使用各有服务条款和限制，未来高流量或商业化可能需要调整。不要将 OpenStreetMap 公共查询端点视为无限制、无限稳定的生产服务。
-
-地图资料版权说明：https://www.openstreetmap.org/copyright
+> 自动化测试可以验证接口和 UI 逻辑，但无法代替你所在手机或电脑的实际 GPS 授权和公开地图接口测试。
