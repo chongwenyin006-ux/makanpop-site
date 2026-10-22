@@ -1,0 +1,53 @@
+name: Keep lightweight StackBlitz preview up to date
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - 'public/data/**'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: makanpop-light-preview
+  cancel-in-progress: false
+
+jobs:
+  sync-preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+      - name: Publish only application files into preview branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          files=".gitignore README.md package.json server.mjs lib/place-status.mjs lib/restaurant-query.mjs public/index.html public/onepage.js public/onepage.css public/photo-lookup.js public/assets/gacha-machine.webp public/assets/cafe-soft.webp public/assets/cafe-atmosphere.webp public/assets/turn-knob.webp"
+          temp="$RUNNER_TEMP/makanpop-frontend-files"
+          mkdir -p "$temp"
+          for file in $files; do
+            mkdir -p "$temp/$(dirname "$file")"
+            cp "$file" "$temp/$file"
+          done
+          git fetch origin preview
+          git switch -C preview origin/preview
+          for file in $files; do
+            mkdir -p "$(dirname "$file")"
+            cp "$temp/$file" "$file"
+          done
+          git add -- $files
+          if git diff --cached --quiet; then
+            echo "Preview is already up to date"
+            exit 0
+          fi
+          git commit -m "preview: sync lightweight MakanPoP app"
+          git push origin HEAD:preview
+          echo "Lean preview synchronized; map files remain on main branch."
