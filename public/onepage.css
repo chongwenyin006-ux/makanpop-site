@@ -29,3 +29,44 @@ dialog{color:#422d2b;background:var(--glass);border:1px solid var(--line);border
 #reportClosed:hover{background:#ffe4de}
 
 .photo-search-link{font-size:13px;font-weight:800;margin:16px 0 5px;padding:11px 14px;border-radius:14px;background:#fff3e7;text-align:center}.photo-search-link a{color:#a44239;text-decoration:none}.photo-search-link a:hover{text-decoration:underline}
+
+/* Cinematic capsule machine: the handle is a separate, rotatable control. */
+.machine{perspective:980px;filter:drop-shadow(0 20px 14px #723e2738)}
+.machine > .machine-photo{position:relative;z-index:1;display:block;filter:drop-shadow(1px 26px 17px #48271b5c);width:100%;height:100%;object-fit:contain;object-position:center bottom}
+.machine-glass{position:absolute;pointer-events:none;z-index:2;left:13%;top:11%;width:75%;height:53%;border-radius:48% 48% 20% 20%;
+ background:linear-gradient(112deg,transparent 14%,#fff8eb1c 23%,transparent 31%,#fffefe16 58%,transparent 70%);
+ box-shadow:inset 13px 0 30px -29px #fff,inset -14px 0 20px -22px #eeb09a;
+ mix-blend-mode:screen;transform:rotate(-4deg)}
+.machine-glass:before{content:"";position:absolute;top:3%;left:13%;height:34%;width:9%;border-radius:100%;transform:rotate(-28deg);background:linear-gradient(to right,transparent,#fffefb58,transparent);filter:blur(5px);opacity:.7}
+.machine-base-glow{position:absolute;pointer-events:none;z-index:2;left:31%;bottom:2%;width:36%;height:17%;
+ background:radial-gradient(ellipse at 49% 67%,#ffce8052,transparent 64%);mix-blend-mode:screen}
+.machine.spinning{animation:machine-real-rock 1.85s cubic-bezier(.36,.12,.67,.86) both}
+.knob{z-index:5;left:37.1%;top:62.2%;width:23.1%;height:17.5%;border-radius:50%;touch-action:none;cursor:grab;
+ background:transparent;box-shadow:0 0 0 2px transparent;transform:none;display:flex;align-items:center;justify-content:center;padding:0;overflow:visible}
+.knob:hover{outline:2px solid #ffdc9bcb;outline-offset:3px;box-shadow:0 0 16px #ffcf8866}
+.knob:active{cursor:grabbing}
+.machine .knob .knob-image{display:block!important;position:relative;z-index:1;object-fit:contain;
+ width:100%;height:100%;border-radius:50%;transform:rotate(var(--dial-angle,0deg));
+ filter:drop-shadow(2px 5px 3px #3d171b57);transition:transform .07s linear;pointer-events:none;user-select:none}
+.machine.spinning .knob .knob-image{animation:dial-real-spin 1.76s cubic-bezier(.35,.04,.35,1) both;transition:none}
+.machine .capsule-drop{z-index:4;left:44%;bottom:4%;width:78px;height:78px;
+ border:3px solid #fff6e6e8;box-shadow:inset -10px -13px 17px #a93f336b,inset 8px 9px 13px #ffffff8a,0 9px 23px #50251e72;
+ background:radial-gradient(ellipse at 29% 22%,#fff 0,#ffefdf38 36%,transparent 50%),linear-gradient(#fff3e8 0 48%,#c64b46 49% 100%)}
+.capsule-drop:before{content:"";position:absolute;left:0;right:0;top:47%;height:4px;background:#fff6e6ad}
+.capsule-stamp{position:absolute;top:59%;left:0;right:0;text-align:center;color:#fff4e4;font-weight:1000;font:900 22px/1 Nunito,sans-serif}
+.turn-hint{position:absolute;right:3%;bottom:24%;z-index:3;transform:rotate(-9deg);font:900 10px/1 Nunito,sans-serif;
+ letter-spacing:.04em;color:#fff9ec;text-shadow:0 2px 6px #602c21;pointer-events:none}
+@keyframes dial-real-spin{0%{transform:rotate(var(--dial-angle,0deg))}35%{transform:rotate(155deg)}63%{transform:rotate(325deg)}89%{transform:rotate(530deg)}100%{transform:rotate(540deg)}}
+@keyframes machine-real-rock{0%,100%{transform:translate3d(0,0,0) rotate(0)}13%{transform:translate3d(-2px,-2px,0) rotate(-.25deg)}30%{transform:translate3d(3px,0,0) rotate(.4deg)}53%{transform:translate3d(-2px,1px,0) rotate(-.24deg)}70%{transform:translate3d(2px,0,0) rotate(.2deg)}}
+@media(prefers-reduced-motion:reduce){.machine.spinning,.machine.spinning .knob .knob-image{animation:none!important}.machine .knob .knob-image{transition:none}}
+.address-matches{margin:12px 0 0;max-height:250px;overflow:auto}
+.address-result{display:flex;gap:8px;align-items:center;text-align:left;justify-content:space-between;background:#fffefb;color:#6b3d31;
+ border:1px solid #e4c9bd;border-radius:12px;width:100%;padding:12px;font-size:12px;font-weight:750;margin-bottom:6px;white-space:normal}
+.address-result span{flex-shrink:0;color:var(--red)}
+.address-result:hover{background:#ffece4}
+.personal-photo-tool{padding:9px 0 13px;text-align:center}
+.photo-upload-label{display:inline-block;padding:10px 17px;border-radius:30px;background:#fff6ed;color:#b34c3d;
+ font-weight:800;font-size:12px;border:1px solid #e9c9ba;cursor:pointer}
+.photo-upload-label:hover{background:#ffe8dc}
+.personal-photo-tool .tagsmall{margin:7px auto;max-width:360px;line-height:1.55}
+@media(max-width:770px){.turn-hint{font-size:8px;right:2%;bottom:24%}.machine .capsule-drop{width:57px;height:57px;left:45%}}
