@@ -25,3 +25,21 @@ GitHub Connect to Git；Framework: None；Build command: `exit 0`；Output dir: 
 
 ## 版权及素材
 视觉素材从用户在对话中提供的 MakanPoP 参考视觉制作，用于本网站的设计原型。图片内印刷小字属于机器素材；其它文案和按钮都是真实网页元素。
+
+## Klang zero-cost real restaurant search (October 2026)
+
+MakanPoP now prefers a **real OpenStreetMap Klang snapshot** before the shared live query.
+This avoids hitting public Overpass servers for every spin.
+
+- The homepage reads `/data/klang-restaurants.json` for supported Klang locations.
+- `scripts/refresh-klang.mjs` collects named restaurants using OpenStreetMap, not invented businesses.
+- `.github/workflows/refresh-klang.yml` runs an on-demand or weekly refresh on GitHub Actions.
+- For a forked repo, workflows may be disabled. Go to Actions, enable workflows if prompted,
+  select **Refresh real Klang restaurants**, and click **Run workflow** once.
+- Verify that `public/data/klang-restaurants.json` exists before considering initial setup complete.
+- If the public service is unavailable, the script preserves any previous snapshot.
+- Pricing, allergen information, and live opening hours are not reliably supplied by OSM.
+- Attribution: © OpenStreetMap contributors, ODbL: https://www.openstreetmap.org/copyright
+
+GitHub standard hosted Actions in a public repository is free; there is no API key or card.
+Public Overpass services are best-effort; the static snapshot may be outdated between refreshes.
