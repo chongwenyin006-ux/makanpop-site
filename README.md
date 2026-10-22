@@ -1,3 +1,44 @@
+## Current provider: TomTom + optional Overture (October 2026)
+
+MakanPoP does not claim every restaurant is open, verified, or has usable images.
+
+### Enable TomTom Places Discover
+
+1. Register on https://my.tomtom.com/ and create a Places Search API key.
+   Verify the free-tier terms at https://docs.tomtom.com/pricing.
+   The currently advertised free allowance is 5,000 Places Discover requests per month, with no credit card needed to get started.
+2. Set the server-side environment variable **TOMTOM_API_KEY** to your key.
+   On Cloudflare Pages, add it as a private secret under the project environment variables.
+   For the StackBlitz Node preview, add it to the private development environment before starting the server.
+   NEVER place this value in GitHub source code, client JavaScript, screenshots or chat messages.
+3. Restart/redeploy; inspect /api/provider-status. tomtomEnabled=true means the key was provided to the server.
+   This alone does NOT prove the provider is accepting the key until a live address/restaurant search succeeds.
+
+Without a configured key, the website explicitly labels its older OSM provider; it will not falsely claim to use TomTom.
+
+### Features when TomTom is configured
+
+- Nearby restaurants, fast food, cafés, food courts and related categories via TomTom Places Discover v3.
+- User-selected Western Peninsular Malaysia search point (GPS, PV15, town, mall or address).
+- Full address text lookup through a backend endpoint /api/addresses?q=..., showing address candidates for selection.
+- Credentials remain server-side; frontend only receives names, coordinates, POI categories and addresses.
+- Overture Maps monthly closure snapshot, when available, excludes only exact normalized name matches within 35m of places explicitly tagged permanently_closed. The feed is incomplete and not a real-time business verification.
+- TomTom errors are shown rather than silently disguising fallback OSM records as TomTom.
+- TomTom's free Places Discover API does not include a reliable restaurant photo gallery or menu prices.
+  Existing source-credited Wikimedia Commons images, personal uploads and external Google Maps links remain separate.
+
+### Usage and cost
+
+The free tier has a monthly limit, not unlimited search. Each address search and each new location restaurant search consumes a request.
+Repeated spins at the same location reuse the in-memory result; monitor/cap usage in your provider account before any public launch.
+No credit card is required for the advertised free sign-up, but we have not validated a user account, live entitlement or future cost for this repository.
+
+Docs: https://docs.tomtom.com/places-search-api/documentation/places-search/discover
+Overture attribution: https://docs.overturemaps.org/attribution/
+Lean preview: https://stackblitz.com/github/chongwenyin006-ux/makanpop-site/tree/preview
+Tests: tests/tomtom.test.mjs run against mock responses and use NO live billable API calls.
+
+---
 # MakanPoP V8 — Cinematic Café Gacha
 
 本版本基于你选择的视觉参考图，重构成可运行的页面。
