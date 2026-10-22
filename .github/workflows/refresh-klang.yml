@@ -1,13 +1,9 @@
 name: Refresh real Klang restaurants
 
+# Klang is now part of the nationwide Geofabrik dataset. This optional
+# Overpass snapshot is only a manual fallback, not a scheduled dependency.
 on:
   workflow_dispatch:
-  schedule:
-    - cron: '17 3 * * 1'
-  push:
-    paths:
-      - 'scripts/refresh-klang.mjs'
-      - '.github/workflows/refresh-klang.yml'
 
 permissions:
   contents: write
