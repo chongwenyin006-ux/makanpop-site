@@ -3,7 +3,7 @@ name: Build Peninsular Malaysia restaurant catalogue
 on:
   workflow_dispatch:
   schedule:
-    - cron: '27 2 2 * *'
+    - cron: '27 2 * * 1'
   push:
     paths:
       - 'scripts/build-peninsula.py'
