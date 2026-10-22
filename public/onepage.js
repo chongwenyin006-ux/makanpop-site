@@ -1,7 +1,7 @@
 'use strict';
 const $=id=>document.getElementById(id);
 const LOCS=[
-['Klang / 巴生',3.044,101.445],['Bandar Bukit Tinggi',3.008,101.439],['Bandar Botanic',2.996,101.445],['Port Klang',3.007,101.389],['Setia Alam',3.109,101.461],['Bukit Raja',3.079,101.454],['Meru',3.109,101.417],['Kapar',3.138,101.378],['Pandamaran',3.019,101.412],['Kota Kemuning',3.003,101.541],['Shah Alam',3.074,101.519],['Seksyen 7 Shah Alam',3.082,101.488],['i-City',3.066,101.486],['Subang Jaya',3.049,101.586],['USJ',3.047,101.582],['Petaling Jaya',3.108,101.645],['Damansara Uptown',3.134,101.622],['Ara Damansara',3.113,101.577],['Sunway',3.072,101.605],['Puchong',3.026,101.615],['Kuala Lumpur',3.145,101.695],['Bukit Bintang',3.147,101.712],['KLCC',3.158,101.712],['Bangsar',3.129,101.671],['Mont Kiara',3.167,101.651],['Cheras',3.088,101.743],['Setapak',3.193,101.718],['Wangsa Maju',3.198,101.735],['Kepong',3.214,101.639],['Sri Petaling',3.071,101.691],['Ampang',3.151,101.764],['Kajang',2.995,101.789],['Putrajaya',2.926,101.696],['Cyberjaya',2.922,101.650],['Seremban',2.725,101.938],['Melaka',2.195,102.250],['George Town',5.414,100.328],['Butterworth',5.398,100.364],['Ipoh',4.597,101.09],['Johor Bahru',1.492,103.741],['Kota Kinabalu',5.98,116.073],['Kuching',1.554,110.359]
+['PV15 · Setapak',3.20209,101.71627],['Klang / 巴生',3.044,101.445],['Bandar Bukit Tinggi',3.008,101.439],['Bandar Botanic',2.996,101.445],['Port Klang',3.007,101.389],['Setia Alam',3.109,101.461],['Bukit Raja',3.079,101.454],['Meru',3.109,101.417],['Kapar',3.138,101.378],['Pandamaran',3.019,101.412],['Kota Kemuning',3.003,101.541],['Shah Alam',3.074,101.519],['Seksyen 7 Shah Alam',3.082,101.488],['i-City',3.066,101.486],['Subang Jaya',3.049,101.586],['USJ',3.047,101.582],['Petaling Jaya',3.108,101.645],['Damansara Uptown',3.134,101.622],['Ara Damansara',3.113,101.577],['Sunway',3.072,101.605],['Puchong',3.026,101.615],['Kuala Lumpur',3.145,101.695],['Bukit Bintang',3.147,101.712],['KLCC',3.158,101.712],['Bangsar',3.129,101.671],['Mont Kiara',3.167,101.651],['Cheras',3.088,101.743],['Setapak',3.193,101.718],['Wangsa Maju',3.198,101.735],['Kepong',3.214,101.639],['Sri Petaling',3.071,101.691],['Ampang',3.151,101.764],['Kajang',2.995,101.789],['Putrajaya',2.926,101.696],['Cyberjaya',2.922,101.650],['Seremban',2.725,101.938],['Melaka',2.195,102.250],['George Town',5.414,100.328],['Butterworth',5.398,100.364],['Ipoh',4.597,101.09],['Johor Bahru',1.492,103.741],['Kota Kinabalu',5.98,116.073],['Kuching',1.554,110.359]
 ];
 const FOOD=[
 ['Malay','🍛',['malay','malaysian','nasi','rendang','satay']],['Chinese','🥢',['chinese','cantonese','hokkien','dim sum','hakka']],['Indian','🍛',['indian','mamak','tamil']],['Mamak','🥘',['mamak','roti canai']],['Nasi Lemak','🍚',['nasi lemak','nasi_lemak']],['Kopitiam','☕',['kopitiam','coffee shop']],['Japanese','🍣',['japanese','sushi','ramen','udon']],['Korean','🍲',['korean','bibimbap']],['Thai','🌶️',['thai','tom yam']],['Vietnamese','🍜',['vietnamese','pho']],['Taiwanese','🧋',['taiwanese']],['Indonesian','🍢',['indonesian']],['Hotpot','🍲',['hotpot','steamboat','hot pot','shabu']],['BBQ','🥩',['bbq','barbecue','grill']],['Seafood','🦐',['seafood']],['Noodles','🍜',['noodle','ramen','laksa','mee','udon']],['Rice','🍚',['rice','nasi','biryani']],['Western','🍽️',['western','european','american','british']],['Italian','🍝',['italian','pasta']],['Burger','🍔',['burger']],['Fried Chicken','🍗',['fried chicken','chicken']],['Pizza','🍕',['pizza']],['Steak','🥩',['steak','steakhouse']],['Mexican','🌮',['mexican']],['Middle Eastern','🥙',['arab','turkish','lebanese']],['Cafe','☕',['cafe','coffee']],['Dessert','🍰',['dessert','cake','pastry','ice cream']],['Bakery','🥐',['bakery','bread']],['Bubble Tea','🧋',['bubble tea','bubble_tea']],['Vegetarian','🥗',['vegetarian','vegan']],['Ice Cream','🍦',['ice cream','gelato']],['Breakfast','🍳',['breakfast','brunch']]
@@ -38,7 +38,7 @@ function isExplicitlyClosed(tags={}){
 function normalize(raw){const seen=new Set(),out=[];for(const p of raw||[]){const t=p.tags||{},lat=Number(p.lat??p.center?.lat),lon=Number(p.lon??p.center?.lon);if(isExplicitlyClosed(t)||!Number.isFinite(lat)||!Number.isFinite(lon))continue;const name=String(nameOf(t)||'').trim(),id=String(p.type)+':'+p.id;if(!name||seen.has(id))continue;seen.add(id);const d=dist(s.location.lat,s.location.lon,lat,lon);if(d>s.radius+250)continue;out.push({id,name,lat,lon,dist:d,tags:t,address:[t['addr:place'],t['addr:unit']?'Unit '+t['addr:unit']:null,t['level:ref']?'Floor '+t['level:ref']:(t.level?'Level '+t.level:null),t['addr:housenumber'],t['addr:street'],t['addr:suburb'],t['addr:city']].filter(Boolean).join(', ')})}return out.sort((a,b)=>a.dist-b.dist)}
 function foodMatch(p,id){const row=FOOD.find(x=>x[0]===id);if(!row)return false;const tags=p.tags||{},text=String(tags.cuisine||'')+' '+String(tags.name||'')+' '+String(tags['name:en']||'')+' '+String(tags.description||'');const hay=text.toLowerCase().replace(/[_;,]/g,' ');return row[2].some(word=>hay.includes(word.replace(/_/g,' ')))||(id==='Cafe'&&tags.amenity==='cafe')||(id==='Ice Cream'&&tags.amenity==='ice_cream')}
 function eligible(){return s.places.filter(p=>!s.closedReports.some(x=>x.id===p.id)).filter(p=>!isExplicitlyClosed(p.tags)).filter(p=>!s.blacklist.some(x=>x.id===p.id)).filter(p=>!s.want.length||s.want.some(id=>foodMatch(p,id))).filter(p=>!s.avoid.some(id=>foodMatch(p,id))).filter(p=>{const price=Number(s.prices[p.id]);return price>0?(price>=s.min&&price<=s.max):s.unknown})}
-function locationHTML(){return '<div class="section"><h3>📍 西马任何地区 / 商场</h3><p class="helper">可 GPS 定位，或直接搜索西马城市、城镇、商场。沙巴、砂拉越不包含在资料库中。</p><div class="controlrow"><button class="secondary" data-action="gps">◎ 使用我的位置</button><button class="secondary" data-place="Klang / 巴生">📍 Klang / 巴生</button></div><div class="field" style="margin-top:15px"><label for="placeInput">搜索城市 / Mall</label><input id="placeInput" list="placeList" autocomplete="off" placeholder="例如 Penang、Johor Bahru、Mid Valley、Pavilion…"><datalist id="placeList">'+LOCS.map(x=>'<option value="'+esc(x[0])+'">').join('')+'</datalist></div><button class="chip" data-action="place" style="margin-top:8px">使用这个地点 →</button><p id="placeSearchState" class="helper">正在检查西马地区和商场索引…</p></div>'}
+function locationHTML(){return '<div class="section"><h3>📍 你想抽哪里的餐厅？</h3><p class="helper">人在 Klang，也可以输入 PV15、Setapak、具体地址或商场。选择手动地址后，不会使用当前 GPS。</p><div class="controlrow"><button class="secondary" data-action="gps">◎ 使用我的 GPS</button><button class="secondary" data-place="PV15 · Setapak">📍 PV15</button><button class="secondary" data-place="Klang / 巴生">📍 Klang</button></div><div class="field" style="margin-top:15px"><label for="placeInput">输入西马建筑物／街道／地址／坐标</label><input id="placeInput" list="placeList" autocomplete="street-address" placeholder="例如 PV15, Jalan Danau Saujana 1, Setapak"><datalist id="placeList">'+LOCS.map(x=>'<option value="'+esc(x[0])+'">').join('')+'</datalist></div><button class="chip" data-action="place" style="margin-top:8px">🔎 搜索这个地址 →</button><div id="addressMatches" class="address-matches" aria-live="polite"></div><p id="placeSearchState" class="helper">按搜索按钮才会查询，地址必须已收录于 OpenStreetMap；也可以粘贴纬度、经度。</p></div>'}
 function foodChips(mode){return '<div class="chips">'+FOOD.map(x=>'<button class="chip '+(mode==='avoid'?'avoid':'')+'" data-food="'+esc(x[0])+'" data-mode="'+mode+'" aria-pressed="'+s[mode].includes(x[0])+'">'+x[1]+' '+esc(x[0])+'</button>').join('')+'</div>'}
 function filterHTML(){return locationHTML()+'<div class="section"><h3>🍜 想吃什么？</h3><p class="helper">可多选。只有地图资料能识别的料理才可按类别准确筛选。</p>'+foodChips('want')+'</div><div class="section"><h3>🚫 今天不想吃？</h3><p class="helper">排除料理类型；公开地图没有完整食材／过敏原资料，不提供安全保证。</p>'+foodChips('avoid')+'</div><div class="section"><h3>💸 每人预算与距离</h3><div class="fieldset"><label class="field">最低预算 RM<input id="minInput" type="number" min="0" max="1000" value="'+s.min+'"></label><label class="field">最高预算 RM<input id="maxInput" type="number" min="1" max="1000" value="'+s.max+'"></label></div><div class="chips" style="margin-top:12px">'+[10,20,30,50,100].map(x=>'<button class="chip" data-budget="'+x+'">RM '+x+'</button>').join('')+'</div><div class="field" style="margin-top:16px"><label for="radiusInput">搜索半径</label><select id="radiusInput">'+[300,500,1000,3000,5000,8000,10000].map(x=>'<option value="'+x+'" '+(x===s.radius?'selected':'')+'>'+(x/1000)+' km</option>').join('')+'</select></div><label class="helper" style="display:flex;align-items:center;gap:8px;margin-top:15px"><input type="checkbox" id="unknownPrice" '+(s.unknown?'checked':'')+'>允许显示没有价格资料的真实餐厅</label><p class="helper">OpenStreetMap 通常没有菜单价钱。RM 筛选仅能核对你自己记录过的价格，不能保证其他餐厅符合预算。</p></div><div class="controlrow"><button class="secondary" data-action="clear">重置口味筛选</button></div>'}
 function listHTML(type){const list=s[type];const result='<p class="helper">记录保存在你自己的浏览器，换设备不会自动同步。</p>'+(list.length?list.map(x=>'<div class="listitem"><span>'+esc(x.name)+'</span><button data-remove="'+esc(x.id)+'" data-list="'+type+'">移除</button></div>').join(''):'<p class="empty">这里暂时没有餐厅。</p>');return type==='blacklist'?result+'<div class="section"><h3>🚫 我标记为永久关闭的餐厅</h3><p class="helper">这些餐厅已在本设备的抽选中排除；尚未经过全站核实。</p>'+(s.closedReports.length?s.closedReports.map(x=>'<div class="listitem"><span>'+esc(x.name)+'</span><button data-remove="'+esc(x.id)+'" data-list="closedReports">撤销标记</button></div>').join(''):'<p class="empty">还没有标记的餐厅。</p>')+'</div>':result}
@@ -109,6 +109,95 @@ function updateLocationSuggestions(query=''){
 
 let page='filters';
 function openPanel(type){page=type;$('panelTitle').textContent=type==='filters'?'今天想吃什么？':type==='blacklist'?'我的 Blacklist':type==='favorites'?'我的收藏':'选择网站主题';$('panelContent').innerHTML=type==='filters'?filterHTML():type==='blacklist'?listHTML('blacklist'):type==='favorites'?listHTML('favorites'):themeHTML();$('panelDone').textContent=type==='filters'?'完成设置，去扭蛋 →':'完成';if(!$('panel').open)$('panel').showModal();if(type==='filters'){ensureDirectory().then(()=>updateLocationSuggestions($('placeInput')?.value||''))}}
+// Address search is fully static; no external public geocoding API is used.
+// A user explicitly submits their typed text, and chooses from real OSM locations.
+const addressShards=new Map();
+let addressMatches=[];
+function addressTokens(value){
+  return String(value||'').normalize('NFKC').toLowerCase()
+    .replace(/[^\p{L}\p{N}]+/gu,' ').trim().split(/\s+/).filter(Boolean);
+}
+async function readAddressShard(first){
+  if(addressShards.has(first))return addressShards.get(first);
+  const data=await fetchStaticJSON('/data/peninsula/address-index/'+first+'.json',
+    x=>Array.isArray(x?.addresses));
+  const list=data.addresses.filter(x=>Number.isFinite(x.lat)&&Number.isFinite(x.lon));
+  addressShards.set(first,list);
+  return list;
+}
+function applyLocation(item,kind='address'){
+  s.location={name:item.name,lat:item.lat,lon:item.lon,kind};
+  s.cacheKey='';s.places=[];s.recent=[];
+  refresh();status('已选择 '+item.name+'，现在可以抽这里附近的真实餐厅。');
+  if($('panel').open)openPanel('filters');
+  toast('搜索地点：'+item.name+' · 与你目前 GPS 位置无关');
+}
+async function searchAddress(query){
+  const text=String(query||'').trim();
+  if(text.length<2){toast('请输入至少两个字的地址或建筑物名称');return true;}
+  // Explicit coordinates can be pasted from a map, even where an address has
+  // not yet been mapped as a searchable building/road.
+  const pair=text.match(/^\s*(-?\d{1,2}\.\d+)\s*[,，]\s*(-?\d{2,3}\.\d+)\s*$/);
+  if(pair){
+    const lat=Number(pair[1]),lon=Number(pair[2]);
+    if(!(lat>=1&&lat<=7.5&&lon>=99&&lon<=105.3)){
+      toast('仅支持西马经纬度，例：3.20209, 101.71627');return true;
+    }
+    applyLocation({name:lat.toFixed(5)+', '+lon.toFixed(5),lat,lon});
+    return true;
+  }
+  if(/\bpv\s*15\b|platinum\s+victory\s*15/i.test(text)){
+    applyLocation({name:'PV15 · Setapak, Kuala Lumpur',lat:3.20209,lon:101.71627});
+    return true;
+  }
+  const tokens=addressTokens(text);
+  if(!tokens.length)return false;
+  const firsts=[...new Set([tokens[0]?.[0],...tokens.slice(1,5).map(x=>x[0])])]
+    .filter(Boolean).map(x=>/^[a-z0-9]$/.test(x)?x:'other').slice(0,5);
+  if($('placeSearchState'))$('placeSearchState').textContent='正在从西马地址索引寻找匹配…';
+  let rows=[];
+  for(const letter of firsts){
+    try{rows.push(...await readAddressShard(letter));}
+    catch(err){console.info('Address shard not available:',letter,err.message);}
+  }
+  if(!rows.length){
+    if($('placeSearchState'))$('placeSearchState').textContent='地址资料暂未准备好。可以改用已知地点、PV15 或经纬度。';
+    return false;
+  }
+  const scored=[];
+  for(const x of rows){
+    const full=[x.n,x.a,x.s,x.c,x.p].filter(Boolean).join(' ');
+    const hay=addressTokens(full).join(' ');
+    const name=addressTokens(x.n).join(' ');
+    if(!name)continue;
+    const queryNorm=tokens.join(' ');
+    const every=tokens.every(t=>hay.includes(t));
+    if(!every&&!name.includes(queryNorm))continue;
+    let score=name===queryNorm?120:name.startsWith(queryNorm)?100:
+      name.includes(queryNorm)?90:every?60:0;
+    if(x.a&&addressTokens(x.a).join(' ').includes(queryNorm))score+=15;
+    if(x.p&&tokens.includes(x.p))score+=12;
+    if(!score)continue;
+    scored.push({x,score});
+  }
+  scored.sort((a,b)=>b.score-a.score||a.x.n.length-b.x.n.length);
+  addressMatches=scored.slice(0,9).map(v=>({
+    name:[v.x.n,v.x.a?v.x.a:null,v.x.c?v.x.c:null].filter(Boolean).join(' · '),
+    lat:v.x.lat,lon:v.x.lon
+  }));
+  const box=$('addressMatches');
+  if(box){
+    if(addressMatches.length){
+      box.innerHTML='<p class="helper">找到以下真实地图地址，请选择正确地点：</p>'+
+        addressMatches.map((m,i)=>'<button type="button" class="address-result" data-address-index="'+i+'">📍 '+esc(m.name)+' <span>→</span></button>').join('');
+      $('placeSearchState').textContent='不是所有门牌都有地图资料；请选择与目标一致的结果。';
+    }else{
+      box.innerHTML='<p class="helper">未找到这条完整地址。试试街道或建筑物名称，也可以输入经纬度。</p>';
+      $('placeSearchState').textContent='OpenStreetMap 未收录的地址暂时无法自动定位。';
+    }
+  }
+  return true;
+}
 async function choosePlace(q){
   const term=String(q||'').trim().toLowerCase();
   if(!term){toast('请输入西马城市或商场名称');return}
@@ -122,12 +211,8 @@ async function choosePlace(q){
       results?.find(x=>x.name.toLowerCase().includes(term)&&term.length>=4);
     if(match){selected={name:match.name+(match.kind==='mall'?' · Mall':''),lat:match.lat,lon:match.lon};if(match.kind==='mall'){s.radius=500;toast('已选购物商场；先显示商场周边 500m 地点。店铺是否在商场内部以地图标记为准。')}}
   }
-  if(!selected){toast('没找到这个地点。请输入西马城市或商场名称，或使用 GPS。');return}
-  s.location={...selected,kind:'preset'};
-  s.cacheKey='';s.places=[];s.recent=[];
-  refresh();status('已选择 '+selected.name+'，点击 START GACHA 查附近真实餐厅');
-  if($('panel').open)openPanel('filters');
-  toast('地点已更新：'+selected.name);
+  if(!selected){await searchAddress(q);return}
+  applyLocation(selected,'address');
 }
 async function gps(){if(!window.isSecureContext||!navigator.geolocation){toast('GPS 需要 HTTPS 和浏览器定位权限。');return}status('正在请求位置权限…');try{const pos=await new Promise((ok,fail)=>navigator.geolocation.getCurrentPosition(ok,fail,{enableHighAccuracy:false,timeout:16000,maximumAge:300000}));s.location={name:'我的 GPS 位置',lat:pos.coords.latitude,lon:pos.coords.longitude,kind:'gps'};s.cacheKey='';s.places=[];s.recent=[];refresh();if($('panel').open)openPanel('filters');status('GPS 定位成功，点击 START GACHA 获取附近餐厅');toast('定位成功！')}catch(e){const msg=e.code===1?'定位权限被拒绝，请允许浏览器使用位置':e.code===2?'目前无法获取设备位置':e.code===3?'GPS 定位超时':'定位失败';status(msg,true);toast(msg)}}
 function key(){return [s.location.lat.toFixed(3),s.location.lon.toFixed(3),s.radius].join(':')}
@@ -290,7 +375,7 @@ async function spin(){if(s.busy)return;if(s.location.kind==='unselected'){openPa
 function result(p){window.MakanPoPPhotos?.show(p);$('osmPlaceLink').href='https://www.openstreetmap.org/'+encodeURIComponent(p.id.split(':')[0])+'/'+encodeURIComponent(p.id.split(':')[1]);$('photosSearchLink').href='https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(p.name+', '+(p.address||'')+', '+p.lat+','+p.lon);const cuisine=String(p.tags.cuisine||'').replaceAll(';',' / ')||({cafe:'咖啡馆',fast_food:'快餐',restaurant:'餐厅',food_court:'美食广场',ice_cream:'冰淇淋'}[p.tags.amenity]||'餐饮地点');$('resultName').textContent=p.name;$('resultType').textContent=cuisine;$('resultDist').textContent=(p.dist/1000).toFixed(1)+' km';$('resultAddress').textContent=p.address||'地图坐标 '+p.lat.toFixed(5)+', '+p.lon.toFixed(5);const price=Number(s.prices[p.id]);$('resultPrice').textContent=price>0?'你记录的人均 RM'+price:'价格未知';$('resultNote').textContent=price>0?'这是你自己的消费记录，不是餐厅官方菜单报价。':'OpenStreetMap 没有提供可核实的菜单价格；当前预算可能不匹配。';$('navLink').href='https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(p.lat+','+p.lon);$('favAction').textContent=s.favorites.some(x=>x.id===p.id)?'♥ 已收藏':'♡ 收藏';$('blackAction').textContent=s.blacklist.some(x=>x.id===p.id)?'✓ 已 Blacklist':'⊘ Blacklist';$('spendForm').hidden=true;$('result').showModal()}
 function toggleList(type){const p=s.current;if(!p)return;const already=s[type].some(x=>x.id===p.id);s[type]=already?s[type].filter(x=>x.id!==p.id):[...s[type],{id:p.id,name:p.name}];save();if(type==='blacklist'&&!already){$('result').close();toast(p.name+' 已加入 Blacklist，以后不会抽中')}else{toast(already?'已从列表移除':'已收藏');resultUpdateActions()}}
 function resultUpdateActions(){if(!s.current)return;$('favAction').textContent=s.favorites.some(x=>x.id===s.current.id)?'♥ 已收藏':'♡ 收藏';$('blackAction').textContent=s.blacklist.some(x=>x.id===s.current.id)?'✓ 已 Blacklist':'⊘ Blacklist'}
-$('openFilters').onclick=()=>openPanel('filters');$('openBlack').onclick=()=>openPanel('blacklist');$('openThemes').onclick=()=>openPanel('themes');$('openPrefs').onclick=()=>openPanel('filters');document.querySelectorAll('[data-open]').forEach(b=>b.addEventListener('click',()=>openPanel('filters')));$('closePanel').onclick=()=>$('panel').close();$('panelDone').onclick=()=>{$('panel').close();if(page==='filters')spin()};$('panelContent').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.food){const type=b.dataset.mode,id=b.dataset.food;const other=type==='want'?'avoid':'want';s[type]=s[type].includes(id)?s[type].filter(x=>x!==id):[...s[type],id];s[other]=s[other].filter(x=>x!==id);save();openPanel('filters');return}if(b.dataset.place){choosePlace(b.dataset.place);return}if(b.dataset.budget){s.max=Number(b.dataset.budget);s.min=Math.min(s.min,s.max);refresh();openPanel('filters');return}if(b.dataset.theme){s.theme=b.dataset.theme;s.custom='';refresh();openPanel('themes');return}if(b.dataset.remove){s[b.dataset.list]=s[b.dataset.list].filter(x=>x.id!==b.dataset.remove);save();openPanel(page);return}if(b.dataset.action==='place'){choosePlace($('placeInput').value);return}if(b.dataset.action==='gps'){gps();return}if(b.dataset.action==='clear'){s.want=[];s.avoid=[];refresh();openPanel('filters');return}if(b.dataset.action==='clear-color'){s.custom='';refresh();openPanel('themes')}});
+$('openFilters').onclick=()=>openPanel('filters');$('openBlack').onclick=()=>openPanel('blacklist');$('openThemes').onclick=()=>openPanel('themes');$('openPrefs').onclick=()=>openPanel('filters');document.querySelectorAll('[data-open]').forEach(b=>b.addEventListener('click',()=>openPanel('filters')));$('closePanel').onclick=()=>$('panel').close();$('panelDone').onclick=()=>{$('panel').close();if(page==='filters')spin()};$('panelContent').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.food){const type=b.dataset.mode,id=b.dataset.food;const other=type==='want'?'avoid':'want';s[type]=s[type].includes(id)?s[type].filter(x=>x!==id):[...s[type],id];s[other]=s[other].filter(x=>x!==id);save();openPanel('filters');return}if(b.dataset.place){choosePlace(b.dataset.place);return}if(b.dataset.budget){s.max=Number(b.dataset.budget);s.min=Math.min(s.min,s.max);refresh();openPanel('filters');return}if(b.dataset.theme){s.theme=b.dataset.theme;s.custom='';refresh();openPanel('themes');return}if(b.dataset.remove){s[b.dataset.list]=s[b.dataset.list].filter(x=>x.id!==b.dataset.remove);save();openPanel(page);return}if(b.dataset.action==='place'){choosePlace($('placeInput').value);return}if(b.dataset.addressIndex!==undefined){const match=addressMatches[Number(b.dataset.addressIndex)];if(match)applyLocation(match);return}if(b.dataset.action==='gps'){gps();return}if(b.dataset.action==='clear'){s.want=[];s.avoid=[];refresh();openPanel('filters');return}if(b.dataset.action==='clear-color'){s.custom='';refresh();openPanel('themes')}});
 $('panelContent').addEventListener('change',e=>{const el=e.target;if(el.id==='radiusInput'){s.radius=Number(el.value);s.cacheKey='';s.places=[]}if(el.id==='minInput'){s.min=Math.max(0,Math.min(1000,Number(el.value)||0))}if(el.id==='maxInput'){s.max=Math.min(1000,Math.max(s.min,Number(el.value)||1))}if(el.id==='unknownPrice')s.unknown=el.checked;if(el.id==='customColor')s.custom=el.value;refresh()});
 $('panelContent').addEventListener('input',e=>{if(e.target.id==='placeInput')updateLocationSuggestions(e.target.value)});
 $('panelContent').addEventListener('keydown',e=>{if(e.target.id==='placeInput'&&e.key==='Enter'){e.preventDefault();choosePlace(e.target.value)}});
