@@ -5,7 +5,7 @@ import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {fetchRestaurantData} from './lib/restaurant-query.mjs';
-import {searchTomTom} from './lib/tomtom-places.mjs';
+import {searchTomTom,searchTomTomAddress} from './lib/tomtom-places.mjs';
 
 const projectDir = path.dirname(fileURLToPath(import.meta.url));
 const staticDir = path.resolve(projectDir, 'public');
@@ -15,6 +15,21 @@ const types = { '.html':'text/html; charset=utf-8', '.css':'text/css; charset=ut
 http.createServer(async (req, res) => {
   try {
     const url = new URL(req.url || '/', 'http://localhost');
+    if(url.pathname === '/api/addresses'){
+      const key=process.env.TOMTOM_API_KEY?.trim();
+      if(!key){
+        res.writeHead(503,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store'});
+        return res.end(JSON.stringify({error:'TomTom 还没有配置 API Key',provider:'osm'}));
+      }
+      try{
+        const data=await searchTomTomAddress(url.searchParams.get('q')||'',key);
+        res.writeHead(200,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store'});
+        return res.end(JSON.stringify(data));
+      }catch(e){
+        res.writeHead(e.status||502,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store'});
+        return res.end(JSON.stringify({error:e.message||'地址查询失败'}));
+      }
+    }
     if(url.pathname === '/api/provider-status'){
       const enabled=Boolean(process.env.TOMTOM_API_KEY?.trim());
       res.writeHead(200,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store'});
