@@ -135,7 +135,49 @@ class FoodPlaces(osmium.SimpleHandler):
         self.count = 0
         self.malls = 0
         self.names_seen = set()
+        self.address_seen = set()
+        self.address_index = defaultdict(list)
+        self.address_count = 0
         self.photo_linked = 0
+
+    def save_address(self, obj, kind, lat, lon):
+        # A local, static text-to-coordinates index. No geocoding API calls.
+        # Include mapped building/POI names, roads, and specific street addresses.
+        tags = obj.tags
+        name = tags.get("name") or tags.get("name:en") or tags.get("name:ms") or tags.get("name:zh")
+        road = tags.get("addr:street") or ""
+        house = tags.get("addr:housenumber") or ""
+        number_name = (str(house) + " " + str(road)).strip() if house and road else ""
+        full = tags.get("addr:full") or ""
+        is_named_feature = bool(name and (
+            tags.get("building") or tags.get("highway") or tags.get("landuse") or
+            tags.get("amenity") or tags.get("shop") or tags.get("office") or
+            tags.get("tourism") or tags.get("leisure") or tags.get("place")
+        ))
+        if not (is_named_feature or full or number_name):
+            return
+        label = str(name or full or number_name).strip()[:115]
+        if not label:
+            return
+        city = str(tags.get("addr:city") or tags.get("addr:suburb") or "")[:70]
+        postcode = str(tags.get("addr:postcode") or "")[:12]
+        unit = str(tags.get("addr:unit") or "")[:20]
+        if kind == "way" and tags.get("highway") and not name:
+            return
+        key = kind + ":" + str(obj.id)
+        if key in self.address_seen:
+            return
+        self.address_seen.add(key)
+        first = label.casefold().strip()[:1]
+        if not first:
+            return
+        # group ASCII letters/digits, route Unicode names to a single shard
+        shard = first if ("a" <= first <= "z" or "0" <= first <= "9") else "other"
+        item = {"n":label, "a":number_name if number_name and number_name != label else "",
+                "s":str(road)[:95], "c":city, "p":postcode, "u":unit,
+                "lat":round(lat,6), "lon":round(lon,6)}
+        self.address_index[shard].append(item)
+        self.address_count += 1
 
     def save(self, obj, kind, lat, lon):
         if not (-90 < lat < 90 and -180 < lon < 180):
@@ -146,6 +188,7 @@ class FoodPlaces(osmium.SimpleHandler):
             return
         tags = obj.tags
         name = tags.get("name") or tags.get("name:en") or tags.get("name:ms") or tags.get("name:zh")
+        self.save_address(obj, kind, lat, lon)
         if not name:
             return
         amenity, shop = tags.get("amenity"), tags.get("shop")
@@ -187,18 +230,21 @@ class FoodPlaces(osmium.SimpleHandler):
 
     def node(self, node):
         tags = node.tags
-        if not (tags.get("name") or tags.get("name:en") or tags.get("name:ms") or tags.get("name:zh")):
+        if not (tags.get("name") or tags.get("name:en") or tags.get("name:ms") or tags.get("name:zh")
+                or tags.get("addr:full") or (tags.get("addr:street") and tags.get("addr:housenumber"))):
             return
         if node.location.valid():
             self.save(node, "node", node.location.lat, node.location.lon)
 
     def way(self, way):
         tags = way.tags
-        if not (tags.get("name") or tags.get("name:en") or tags.get("name:ms") or tags.get("name:zh")):
+        if not (tags.get("name") or tags.get("name:en") or tags.get("name:ms") or tags.get("name:zh")
+                or tags.get("addr:full") or (tags.get("addr:street") and tags.get("addr:housenumber"))):
             return
         if not (tags.get("amenity") in AMENITIES or tags.get("shop") in FOOD_SHOPS or
-                tags.get("shop") == "mall" or tags.get("building") == "mall" or
-                tags.get("place") in PLACE_TAGS):
+                tags.get("shop") == "mall" or tags.get("building") or tags.get("highway") or
+                tags.get("landuse") or tags.get("office") or tags.get("tourism") or
+                tags.get("place") or (tags.get("addr:street") and tags.get("addr:housenumber"))):
             return
         try:
             coords = [(n.location.lat, n.location.lon)
@@ -234,6 +280,15 @@ def main():
         unique[key] = item
     places = sorted(unique.values(), key=lambda x: (x["kind"] != "mall", x["name"].casefold()))
     (staging / "places.json").write_text(json.dumps({"places": places}, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+    # Search-by-address on one deliberate user submission, grouped by first
+    # letter to avoid loading the whole country's full address index on startup.
+    addresses_dir = staging / "address-index"
+    addresses_dir.mkdir()
+    for shard, addresses in collector.address_index.items():
+        (addresses_dir / (shard + ".json")).write_text(
+            json.dumps({"addresses": addresses}, ensure_ascii=False, separators=(",", ":")),
+            encoding="utf-8")
+
     manifest = {
         "region": "Peninsular Malaysia (excluding Sabah, Sarawak and Labuan)",
         "source": "OpenStreetMap via Geofabrik",
@@ -246,6 +301,8 @@ def main():
         "count": collector.count,
         "placeNames": len(places),
         "malls": collector.malls,
+        "mappedAddresses": collector.address_count,
+        "addressShards": sorted(collector.address_index.keys()),
         "directWikimediaPhotoLinks": collector.photo_linked,
         "closureRule": "Excludes places explicitly tagged inactive/closed; untagged permanent closures can remain",
         "includesIndoor": "Only establishments explicitly mapped in OpenStreetMap",
