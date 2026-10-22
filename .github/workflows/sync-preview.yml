@@ -30,7 +30,7 @@ jobs:
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          files=".gitignore README.md package.json server.mjs lib/place-status.mjs lib/restaurant-query.mjs public/index.html public/onepage.js public/onepage.css public/photo-lookup.js public/assets/gacha-machine.webp public/assets/cafe-soft.webp public/assets/cafe-atmosphere.webp public/assets/turn-knob.webp"
+          files=".gitignore README.md package.json server.mjs lib/place-status.mjs lib/restaurant-query.mjs lib/tomtom-places.mjs public/index.html public/onepage.js public/onepage.css public/photo-lookup.js public/assets/gacha-machine.webp public/assets/cafe-soft.webp public/assets/cafe-atmosphere.webp public/assets/turn-knob.webp"
           temp="$RUNNER_TEMP/makanpop-frontend-files"
           mkdir -p "$temp"
           for file in $files; do
