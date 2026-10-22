@@ -70,3 +70,16 @@ dialog{color:#422d2b;background:var(--glass);border:1px solid var(--line);border
 .photo-upload-label:hover{background:#ffe8dc}
 .personal-photo-tool .tagsmall{margin:7px auto;max-width:360px;line-height:1.55}
 @media(max-width:770px){.turn-hint{font-size:8px;right:2%;bottom:24%}.machine .capsule-drop{width:57px;height:57px;left:45%}}
+
+/* Inline address shortcut keeps the original single-screen layout uncluttered. */
+.quick-location{width:min(330px,100%);margin-top:8px}
+.quick-location label{display:block;font-size:11px;font-weight:900;letter-spacing:.03em;color:#795747;margin:0 0 7px 7px}
+.quick-location-bar{display:flex;align-items:center;min-height:47px;gap:5px;border:1px solid #e9c7b5;
+ padding:4px 4px 4px 14px;border-radius:29px;background:#fffaf1e8;box-shadow:0 6px 16px #6d393314}
+.quick-location-bar input{outline:0;border:0;flex:1;min-width:0;color:#58392f;background:transparent;font-size:12px}
+.quick-location-bar input::placeholder{color:#94786e}
+.quick-location-bar button{flex:none;height:36px;width:40px;border-radius:23px;border:0;background:var(--red);color:white;
+ font-size:21px;font-weight:900}
+.quick-location-bar:focus-within{outline:2px solid #eeb77a}
+@media(max-width:770px){.quick-location{margin:12px auto 7px;width:min(335px,96%)}.quick-location label{font-size:10px;text-align:left}
+ .quick-location-bar{min-height:40px}.quick-location-bar button{height:32px;width:35px}}
