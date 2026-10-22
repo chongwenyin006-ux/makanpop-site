@@ -27,3 +27,5 @@ dialog{color:#422d2b;background:var(--glass);border:1px solid var(--line);border
 .osm-source{font-size:11px;margin:15px 0 0}
 #reportClosed{color:#b73737;background:#fff0ec;border-color:#e9bfb8}
 #reportClosed:hover{background:#ffe4de}
+
+.photo-search-link{font-size:13px;font-weight:800;margin:16px 0 5px;padding:11px 14px;border-radius:14px;background:#fff3e7;text-align:center}.photo-search-link a{color:#a44239;text-decoration:none}.photo-search-link a:hover{text-decoration:underline}
