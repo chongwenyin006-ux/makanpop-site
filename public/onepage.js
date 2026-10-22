@@ -150,6 +150,36 @@ async function searchAddress(query){
     applyLocation({name:'PV15 · Setapak, Kuala Lumpur',lat:3.20209,lon:101.71627});
     return true;
   }
+  // With a configured server-side TomTom key, ask TomTom only on explicit
+  // submission. Display choices rather than silently accepting a guessed address.
+  const provider=await getProviderStatus();
+  if(provider.enabled){
+    const display=$('addressMatches');
+    if($('placeSearchState'))$('placeSearchState').textContent='正在使用 TomTom 搜寻地址／商场…';
+    try{
+      const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),12000);
+      let data;
+      try{
+        const res=await fetch('/api/addresses?q='+encodeURIComponent(text),{signal:ctrl.signal,cache:'no-store'});
+        if(!res.ok)throw Error('TomTom 查询 HTTP '+res.status);
+        data=await res.json();
+      }finally{clearTimeout(timer)}
+      if(data.provider==='tomtom'&&Array.isArray(data.locations)&&data.locations.length){
+        addressMatches=data.locations.slice(0,10).map(x=>({
+          name:x.name+(x.label?' · '+x.label:''),
+          lat:x.lat,lon:x.lon
+        }));
+        if(display)display.innerHTML='<p class="helper">TomTom 找到这些地址／建筑物，请选择正确地点：</p>'+
+          addressMatches.map((m,i)=>'<button type="button" class="address-result" data-address-index="'+i+'">📍 '+esc(m.name)+' <span>→</span></button>').join('');
+        if($('placeSearchState'))$('placeSearchState').textContent='来自 TomTom Places；地点及商户资料仍建议核实。';
+        return true;
+      }
+      if($('placeSearchState'))$('placeSearchState').textContent='TomTom 未找到匹配，继续尝试 OSM 离线地址索引…';
+    }catch(e){
+      console.info('TomTom address lookup unavailable; trying local map index:',e.message);
+      if($('placeSearchState'))$('placeSearchState').textContent='TomTom 地址查询暂不可用，正在尝试 OSM 备用地点索引…';
+    }
+  }
   const tokens=addressTokens(text);
   if(!tokens.length)return false;
   // Road/address terms such as 'Jalan' or house numbers are not useful
@@ -211,6 +241,9 @@ async function choosePlace(q){
   const loc=LOCS.find(x=>x[0].toLowerCase()===term)||
     LOCS.find(x=>x[0].toLowerCase().includes(term)&&term.length>=3);
   let selected=loc?{name:loc[0],lat:loc[1],lon:loc[2]}:null;
+  if(!selected&&(await getProviderStatus()).enabled){
+    await searchAddress(q);return;
+  }
   if(!selected){
     const results=await ensureDirectory();
     const match=results?.find(x=>directoryLabel(x).toLowerCase()===term)||
