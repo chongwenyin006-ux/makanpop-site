@@ -30,6 +30,7 @@
         <button id="openPrefs" class="secondary" type="button">☷ SET MY PREFERENCES →</button>
       </div>
       <div class="smallnote" id="status" aria-live="polite">请选地址或 GPS。地点资料未经营业核实。</div>
+      <p class="source-note" id="sourceNote">正在检查餐厅数据来源…</p>
       <div class="quick-location">
         <label for="quickAddress">想在别的地方吃？</label>
         <div class="quick-location-bar">
@@ -82,7 +83,7 @@
       <span class="tagsmall">可选择自己拍摄、获许可的照片。只储存于本浏览器，其他用户不会看见。</span>
     </div>
     <h2 id="resultName">今晚吃什么？</h2>
-    <p class="resultmeta">OpenStreetMap 收录地点（非营业认证） · <span id="resultType"></span></p>
+    <p class="resultmeta"><span id="resultSource">地图地点记录（非营业认证）</span> · <span id="resultType"></span></p>
     <p class="opening-disclaimer">⚠️ 此记录可能已停业、搬迁或资料有误。MakanPoP 无法实时核实营业；请先在其他地图／餐厅官方渠道确认，再前往。</p>
     <div class="facts"><span class="fact" id="resultDist"></span><span class="fact" id="resultPrice"></span></div>
     <p class="resultmeta" id="resultAddress"></p>
