@@ -379,7 +379,51 @@ $('openFilters').onclick=()=>openPanel('filters');$('openBlack').onclick=()=>ope
 $('panelContent').addEventListener('change',e=>{const el=e.target;if(el.id==='radiusInput'){s.radius=Number(el.value);s.cacheKey='';s.places=[]}if(el.id==='minInput'){s.min=Math.max(0,Math.min(1000,Number(el.value)||0))}if(el.id==='maxInput'){s.max=Math.min(1000,Math.max(s.min,Number(el.value)||1))}if(el.id==='unknownPrice')s.unknown=el.checked;if(el.id==='customColor')s.custom=el.value;refresh()});
 $('panelContent').addEventListener('input',e=>{if(e.target.id==='placeInput')updateLocationSuggestions(e.target.value)});
 $('panelContent').addEventListener('keydown',e=>{if(e.target.id==='placeInput'&&e.key==='Enter'){e.preventDefault();choosePlace(e.target.value)}});
-$('spin').onclick=spin;$('knob').onclick=spin;let pt=null;$('knob').addEventListener('pointerdown',e=>{pt=[e.clientX,e.clientY]});$('knob').addEventListener('pointerup',e=>{if(pt&&Math.hypot(e.clientX-pt[0],e.clientY-pt[1])>24)spin();pt=null});
+$('spin').onclick=spin;
+const knobButton=$('knob');
+let knobDrag=null,knobRotation=0,suppressKnobClick=false;
+function pointerKnobAngle(e){
+  const rect=knobButton.getBoundingClientRect();
+  return Math.atan2(e.clientY-(rect.top+rect.height/2),
+                    e.clientX-(rect.left+rect.width/2));
+}
+knobButton.addEventListener('pointerdown',e=>{
+  if(s.busy)return;
+  knobDrag={id:e.pointerId,last:pointerKnobAngle(e),travel:0,
+    downX:e.clientX,downY:e.clientY};
+  knobButton.setPointerCapture?.(e.pointerId);
+});
+knobButton.addEventListener('pointermove',e=>{
+  if(!knobDrag||knobDrag.id!==e.pointerId||s.busy)return;
+  const angle=pointerKnobAngle(e);
+  let delta=angle-knobDrag.last;
+  while(delta>Math.PI)delta-=2*Math.PI;
+  while(delta<-Math.PI)delta+=2*Math.PI;
+  knobDrag.last=angle;
+  knobDrag.travel+=Math.abs(delta);
+  knobRotation+=delta*180/Math.PI;
+  knobButton.style.setProperty('--dial-angle',knobRotation.toFixed(1)+'deg');
+});
+knobButton.addEventListener('pointerup',e=>{
+  if(!knobDrag||knobDrag.id!==e.pointerId)return;
+  const moved=Math.hypot(e.clientX-knobDrag.downX,e.clientY-knobDrag.downY);
+  const turn=knobDrag.travel;
+  knobDrag=null;
+  if(moved>9){
+    suppressKnobClick=true;
+    if(turn>1.15){navigator.vibrate?.(18);spin()}
+    else toast('再转动把手一点，就能出扭蛋！');
+    setTimeout(()=>{suppressKnobClick=false},0);
+  }
+});
+knobButton.addEventListener('pointercancel',()=>{knobDrag=null});
+knobButton.onclick=()=>{
+  if(suppressKnobClick||s.busy)return;
+  knobRotation+=180;
+  knobButton.style.setProperty('--dial-angle',knobRotation+'deg');
+  navigator.vibrate?.(13);
+  spin();
+};
 $('reportClosed').onclick=()=>{
   const p=s.current;
   if(!p)return;
@@ -388,5 +432,15 @@ $('reportClosed').onclick=()=>{
   save();$('result').close();window.MakanPoPPhotos?.reset();
   toast('已从此设备的未来扭蛋中排除 '+p.name+'。如需全站更新，可在 OpenStreetMap 提交核实的修正。');
 };
+$('personalPhotoInput').addEventListener('change',async e=>{
+  const file=e.target.files?.[0];e.target.value='';
+  if(!file||!s.current)return;
+  try{
+    await window.MakanPoPPhotos.savePersonalPhoto(s.current,file);
+    toast('餐厅实拍照已保存至你的浏览器，只有你在这台设备可以看到。');
+  }catch(err){
+    toast('无法储存这张实拍照片：'+(err?.message||'请换一张图片'));
+  }
+});
 $('closeResult').onclick=()=>$('result').close();$('reroll').onclick=()=>{$('result').close();window.MakanPoPPhotos?.reset();spin()};$('favAction').onclick=()=>toggleList('favorites');$('blackAction').onclick=()=>toggleList('blacklist');$('spendAction').onclick=()=>{$('spendForm').hidden=!$('spendForm').hidden};$('saveSpend').onclick=()=>{const price=Number($('spendInput').value);if(!(price>0&&price<=1000)){toast('请输入 RM1–RM1000 的金额');return}if(!s.current)return;s.prices[s.current.id]=price;save();$('resultPrice').textContent='你记录的人均 RM'+price;$('resultNote').textContent='这是你的个人消费记录，不是官方菜单价格。';$('spendForm').hidden=true;toast('保存成功！')};
 refresh();status(s.location.kind==='unselected'?'先选择西马位置或使用 GPS，再开始扭蛋':'已选择 '+s.location.name+' · 点击 START GACHA');
