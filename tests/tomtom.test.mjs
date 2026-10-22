@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {searchTomTom,convertTomTom} from '../lib/tomtom-places.mjs';
+import {searchTomTom,convertTomTom,searchTomTomAddress} from '../lib/tomtom-places.mjs';
 
 const opts=new URLSearchParams({lat:'3.202244',lon:'101.716311',radius:'1200'});
 const fixture={
@@ -51,4 +51,31 @@ test('TomTom is called once server side with correct v3 discover and safe filter
 test('reports quota limit without switching source',async()=>{
   const fetch429=async()=>({ok:false,status:429});
   await assert.rejects(searchTomTom(opts,'TESTKEY',fetch429),/配额|调用频率/);
+});
+
+
+test('TomTom explicit address lookup returns only West Malaysia and preserves labels',async()=>{
+  let body;
+  const fakeFetch=async(url,opts)=>{
+    body=JSON.parse(opts.body);
+    return {ok:true,json:async()=>({results:[
+      {id:'PV15-test',type:'poi',title:'PV15',subtitles:['2A Jalan Danau Saujana 1','Setapak'],
+        address:{countryCodeIso2:'MY',countrySubdivision:'Kuala Lumpur'},
+        position:{coordinates:[101.716311,3.202244]}},
+      {id:'KL-test',type:'address',title:'Jalan Ampang',position:{coordinates:[101.7,3.15]}},
+      {id:'SB-test',type:'poi',title:'Sabah',address:{countrySubdivision:'Sabah'},
+        position:{coordinates:[116.1,5.95]}}
+    ]})};
+  };
+  const result=await searchTomTomAddress('PV15, Setapak','SECRET_TEST_ONLY',fakeFetch);
+  assert.equal(result.provider,'tomtom');
+  assert.equal(result.locations.length,2);
+  assert.equal(result.locations[0].name,'PV15');
+  assert.equal(result.locations[0].lat,3.202244);
+  assert.ok(result.locations[0].label.includes('Setapak'));
+  assert.deepEqual(body.filters.countryCodesIso2,['MY']);
+  assert.equal(body.query,'PV15, Setapak');
+});
+test('address is rejected when too short',async()=>{
+  await assert.rejects(searchTomTomAddress('X','SECRET',async()=>{throw Error('Should not call')}),/2–220/);
 });
