@@ -35,6 +35,11 @@ FIELDS = [
     "addr:housenumber", "addr:street", "addr:city", "addr:suburb",
     "addr:place", "addr:unit", "level", "level:ref", "indoor",
     "building", "takeaway", "diet:vegetarian", "diet:vegan",
+    "image", "wikimedia_commons", "wikidata", "website",
+    "disused", "abandoned", "demolished", "removed", "construction",
+    "end_date", "status", "operational_status", "business_status",
+    "disused:amenity", "abandoned:amenity", "closed:amenity",
+    "removed:amenity", "was:amenity", "shop",
 ]
 SESSION = requests.Session()
 SESSION.headers.update({"User-Agent": "MakanPoP-WestMalaysia-OSM-Extract/1.0 (https://github.com/chongwenyin006-ux/makanpop-site)"})
@@ -92,6 +97,35 @@ def download_file(url, target):
         raise RuntimeError(f"Unexpectedly small map extract: {size} bytes")
     print("Downloaded", round(size / (1024 * 1024)), "MiB of public map data", flush=True)
 
+def is_confirmed_closed(tags):
+    """Exclude only features that source tags describe as inactive; no live-status guarantee."""
+    inactive = {"yes", "true", "1"}
+    for key in ("disused", "abandoned", "demolished", "removed"):
+        if str(tags.get(key, "")).casefold() in inactive:
+            return True
+    if str(tags.get("shop", "")).casefold() in {"vacant", "disused", "closed"}:
+        return True
+    if str(tags.get("amenity", "")).casefold() in {"disused", "abandoned", "vacant"}:
+        return True
+    for key in ("business_status", "operational_status", "status"):
+        if str(tags.get(key, "")).casefold() in {
+            "permanently_closed", "closed_permanently", "out_of_business",
+            "defunct", "shut_down", "disused", "abandoned", "closed",
+        }:
+            return True
+    for key in ("disused:amenity", "abandoned:amenity", "closed:amenity",
+                "demolished:amenity", "removed:amenity", "was:amenity",
+                "construction:amenity", "proposed:amenity"):
+        if tags.get(key):
+            return True
+    if str(tags.get("opening_hours", "")).strip().casefold() in {
+        "closed", "off", "permanently closed",
+    }:
+        return True
+    # Opening hours such as "Mo off" do not imply the business has closed.
+    return False
+
+
 class FoodPlaces(osmium.SimpleHandler):
     def __init__(self, boundary):
         super().__init__()
@@ -101,6 +135,7 @@ class FoodPlaces(osmium.SimpleHandler):
         self.count = 0
         self.malls = 0
         self.names_seen = set()
+        self.photo_linked = 0
 
     def save(self, obj, kind, lat, lon):
         if not (-90 < lat < 90 and -180 < lon < 180):
@@ -115,6 +150,8 @@ class FoodPlaces(osmium.SimpleHandler):
             return
         amenity, shop = tags.get("amenity"), tags.get("shop")
         is_food = amenity in AMENITIES or shop in FOOD_SHOPS
+        if is_food and is_confirmed_closed(tags):
+            is_food = False
         is_mall = shop == "mall" or tags.get("building") == "mall" or amenity == "shopping_mall"
         is_locality = tags.get("place") in PLACE_TAGS
         if is_food:
@@ -134,6 +171,8 @@ class FoodPlaces(osmium.SimpleHandler):
                 cell = f"t{math.floor(lat / TILE)}_{math.floor(lon / TILE)}"
                 self.grid[cell].append(entry)
                 self.count += 1
+                if str(tags.get('wikimedia_commons', '')).startswith('File:') or 'commons.wikimedia.org/wiki/File:' in str(tags.get('image', '')):
+                    self.photo_linked += 1
         if is_mall or is_locality:
             # Searchable mall/city/suburb suggestions from real map locations.
             self.index.append({
@@ -207,6 +246,8 @@ def main():
         "count": collector.count,
         "placeNames": len(places),
         "malls": collector.malls,
+        "directWikimediaPhotoLinks": collector.photo_linked,
+        "closureRule": "Excludes places explicitly tagged inactive/closed; untagged permanent closures can remain",
         "includesIndoor": "Only establishments explicitly mapped in OpenStreetMap",
     }
     (staging / "manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
