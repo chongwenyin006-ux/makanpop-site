@@ -180,7 +180,7 @@ class FoodPlaces(osmium.SimpleHandler):
         primary = meaningful[0] if meaningful else (words[0] if words else "")
         if not primary:
             return
-        shard = primary[:3] if re.match(r"^[a-z0-9]+$", primary) else "other"
+        shard = primary[:2] if re.match(r"^[a-z0-9]+$", primary) else "other"
         item = {"n":label, "a":number_name if number_name and number_name != label else "",
                 "s":str(road)[:95], "c":city, "p":postcode, "u":unit,
                 "lat":round(lat,6), "lon":round(lon,6)}
@@ -194,7 +194,7 @@ class FoodPlaces(osmium.SimpleHandler):
                                not re.match(r"^\d+[a-z]?$", w)]
             road_primary = road_meaningful[0] if road_meaningful else (road_words[0] if road_words else "")
             if road_primary:
-                street_shard = road_primary[:3] if re.match(r"^[a-z0-9]+$", road_primary) else "other"
+                street_shard = road_primary[:2] if re.match(r"^[a-z0-9]+$", road_primary) else "other"
                 if street_shard != shard:
                     self.address_index[street_shard].append(item)
         self.address_count += 1
