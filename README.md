@@ -55,7 +55,7 @@ The generated catalogue has real OSM POI identifiers, coordinates, food category
 It never invents a restaurant to fill the selection. There is no guarantee of every restaurant or up-to-date menus inside every shopping mall.
 
 - Generator: `scripts/build-peninsula.py` (downloads and processes the public Geofabrik PBF)
-- Scheduled action: `.github/workflows/build-peninsula.yml` (monthly and manual)
+- Scheduled action: `.github/workflows/build-peninsula.yml` (weekly and manual)
 - Published metadata: `/data/peninsula/manifest.json`
 - City and mall lookup: `/data/peninsula/places.json`
 - Nearby static tiles: `/data/peninsula/tXX_YYY.json`, downloaded on demand.
@@ -69,3 +69,36 @@ Geofabrik source https://download.geofabrik.de/asia/malaysia-singapore-brunei.ht
 **Cost:** No Google Places API key or billing account. Static data is free; GitHub Actions/hosting
 are within public-repository and free-plan use subject to provider limits. User-provided prices are personal notes,
 not verified current menu prices.
+
+## Restaurant photos and permanent closures
+
+**What is excluded?** The nationwide OSM extract and the live fallback filter places
+explicitly marked inactive via lifecycle tags (`disused:*`, `abandoned:*`,
+`demolished:*`, `removed:*`, vacant shops, confirmed closed business-status
+tags, and `opening_hours=closed`). Places which actually closed but have not
+been updated on OpenStreetMap cannot be detected reliably with free OSM data.
+The data build refreshes once per week via GitHub Actions; current on-site
+business status is **not** guaranteed.
+
+**User reports:** The result modal has `这家已永久关闭`. Confirming hides that
+OSM POI from the current browser's future spins, and it can be restored in
+`Blacklist`. This is not a verified global closure notice and does not write
+to OpenStreetMap. Users can open the OSM place record to submit a verified edit.
+
+**Actual restaurant photos:** `public/photo-lookup.js` only attempts to display
+a Wikimedia Commons *File:* photo explicitly attached to this exact OSM
+restaurant record (`wikimedia_commons` or Commons `image`). The Commons API
+returns the thumbnail and author/license details; the interface attributes
+the photographer and links to the file's source and full terms.
+No unverified image searches, generic food photos, or pictures of other
+branches are silently substituted. Restaurants with no appropriately tagged
+Commons photo show a clear 'no verified photo' message and a separate link
+to search the exact restaurant name/location in Google Maps. This link does
+not embed Google Maps photographs or use a paid Google API.
+
+The October 22 2026 West Malaysia snapshot currently has only **8 direct
+restaurant-linked Commons photo references**. This is a severe coverage gap
+and must not be represented as universal restaurant photography.
+
+All map data: © OpenStreetMap contributors (ODbL). Photographs, when present,
+follow the license and attribution shown on their individual Commons file pages.
