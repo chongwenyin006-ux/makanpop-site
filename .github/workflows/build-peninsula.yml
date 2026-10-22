@@ -38,5 +38,17 @@ jobs:
           git add -A public/data/peninsula
           if ! git diff --staged --quiet; then
             git commit -m "data: refresh Peninsular Malaysia food POIs from OSM"
-            git push
+            # UI edits can land while the large nationwide dataset is building.
+            # Rebase data-only commit on the latest main instead of overwriting it.
+            for attempt in 1 2 3 4 5; do
+              git fetch origin main
+              git rebase origin/main
+              if git push origin HEAD:main; then
+                exit 0
+              fi
+              echo "Remote main changed; retrying safe data-only rebase"
+              sleep 3
+            done
+            echo "Could not safely publish national data after retries"
+            exit 1
           fi
