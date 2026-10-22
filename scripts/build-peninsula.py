@@ -185,6 +185,18 @@ class FoodPlaces(osmium.SimpleHandler):
                 "s":str(road)[:95], "c":city, "p":postcode, "u":unit,
                 "lat":round(lat,6), "lon":round(lon,6)}
         self.address_index[shard].append(item)
+        # Building names and actual street addresses can differ: index the
+        # exact same OSM feature by its street too, so typing a full address
+        # locates its building rather than requiring the business name.
+        if road:
+            road_words = re.findall(r"[^\W_]+", str(road).casefold(), flags=re.UNICODE)
+            road_meaningful = [w for w in road_words if w not in stop and
+                               not re.match(r"^\d+[a-z]?$", w)]
+            road_primary = road_meaningful[0] if road_meaningful else (road_words[0] if road_words else "")
+            if road_primary:
+                street_shard = road_primary[:3] if re.match(r"^[a-z0-9]+$", road_primary) else "other"
+                if street_shard != shard:
+                    self.address_index[street_shard].append(item)
         self.address_count += 1
 
     def save(self, obj, kind, lat, lon):
