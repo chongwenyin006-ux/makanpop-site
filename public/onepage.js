@@ -28,6 +28,36 @@ function filterHTML(){return locationHTML()+'<div class="section"><h3>🍜 想�
 function listHTML(type){const list=s[type];return '<p class="helper">记录保存在你自己的浏览器，换设备不会自动同步。</p>'+(list.length?list.map(x=>'<div class="listitem"><span>'+esc(x.name)+'</span><button data-remove="'+esc(x.id)+'" data-list="'+type+'">移除</button></div>').join(''):'<p class="empty">这里暂时没有餐厅。</p>')}
 function themeHTML(){return '<div class="section"><h3>🎨 换一个心情</h3><div class="chips">'+THEMES.map(x=>'<button class="chip themechip" data-theme="'+x[0]+'" aria-pressed="'+(s.theme===x[0])+'"><span class="swatch" style="background:'+x[2]+'"></span>'+x[1]+'</button>').join('')+'</div></div><div class="section"><h3>自己选主色</h3><p class="helper">只改变界面强调色，餐厅资料不会改变。</p><input id="customColor" type="color" value="'+(s.custom||'#ed4b50')+'"><button class="chip" data-action="clear-color">恢复主题默认颜色</button></div>'}
 
+// Static OpenStreetMap data is mirrored on the public GitHub repository.
+// This allows StackBlitz users to keep searching even if its local preview proxy
+// cannot deliver an asset. No paid API key or card is needed.
+const DATA_MIRRORS=[
+  '',
+  'https://raw.githubusercontent.com/chongwenyin006-ux/makanpop-site/main/public',
+  'https://cdn.jsdelivr.net/gh/chongwenyin006-ux/makanpop-site@main/public'
+];
+async function fetchStaticJSON(path,validator){
+  const problems=[];
+  for(const base of DATA_MIRRORS){
+    const url=base+path;
+    const ctrl=new AbortController();
+    const timer=setTimeout(()=>ctrl.abort(),base?11000:5000);
+    try{
+      const response=await fetch(url,{signal:ctrl.signal,cache:base?'default':'no-store'});
+      if(!response.ok)throw Error('HTTP '+response.status);
+      const json=await response.json();
+      if(!validator(json))throw Error('数据文件格式不正确');
+      if(base)console.info('MakanPoP: 已从备用公开资料源恢复',base);
+      return json;
+    }catch(err){
+      problems.push((base||'网站预览')+': '+(err.name==='AbortError'?'超时':err.message));
+    }finally{clearTimeout(timer)}
+  }
+  const error=new Error('连接失败：网站预览及两个公开数据备用地址均不可用');
+  error.details=problems;
+  throw error;
+}
+
 let directory=null;
 let directoryPromise=null;
 const directoryLabel=x=>x.name+' ('+(x.kind==='mall'?'Mall':x.kind)+(x.city?', '+x.city:'')+')';
@@ -36,10 +66,8 @@ async function ensureDirectory(){
   if(directoryPromise)return directoryPromise;
   directoryPromise=(async()=>{
     try{
-      const res=await fetch('/data/peninsula/places.json',{cache:'force-cache'});
-      if(!res.ok)throw Error('地区索引尚未发布');
-      const data=await res.json();
-      if(!Array.isArray(data.places)||!data.places.length)throw Error('地区索引为空');
+      const data=await fetchStaticJSON('/data/peninsula/places.json',
+        x=>Array.isArray(x?.places)&&x.places.length>0);
       directory=data.places.filter(x=>Number.isFinite(x.lat)&&Number.isFinite(x.lon)&&x.name);
       return directory;
     }catch(e){
@@ -98,10 +126,8 @@ async function ensureNationalManifest(){
   nationalLastAttempt=Date.now();
   nationalPromise=(async()=>{
     try{
-      const r=await fetch('/data/peninsula/manifest.json',{cache:'no-store'});
-      if(!r.ok)throw Error('西马资料库尚未生成');
-      const m=await r.json();
-      if(!Array.isArray(m.tiles)||m.tiles.length<20||!Number.isFinite(m.tileSize))throw Error('西马数据索引格式不正确');
+      const m=await fetchStaticJSON('/data/peninsula/manifest.json',
+        x=>Array.isArray(x?.tiles)&&x.tiles.length>=20&&Number.isFinite(x.tileSize));
       nationalManifest={...m,tileSet:new Set(m.tiles)};
       return nationalManifest;
     }catch(e){console.info('Nationwide catalogue not ready:',e.message);return null}
@@ -112,27 +138,33 @@ async function ensureNationalManifest(){
 async function loadPeninsulaFood(k){
   const manifest=await ensureNationalManifest();
   if(!manifest)return false;
-  // The national build contains only Peninsular-Malaysia OSM features.
-  // One neighbouring cell on each axis covers the allowed 10km search radius.
-  const centerLat=Math.floor(s.location.lat/manifest.tileSize);
-  const centerLon=Math.floor(s.location.lon/manifest.tileSize);
+  // Fetch only tiles intersecting the requested search circle's bounding box.
+  // At 500m most searches need one tile rather than nine.
+  const halfLat=s.radius/110574;
+  const halfLon=s.radius/(111320*Math.max(0.05,Math.cos(s.location.lat*Math.PI/180)));
   const keys=[];
-  for(let dx=-1;dx<=1;dx++)for(let dy=-1;dy<=1;dy++){
-    const cell='t'+(centerLat+dx)+'_'+(centerLon+dy);
-    if(manifest.tileSet.has(cell))keys.push(cell);
+  for(let a=Math.floor((s.location.lat-halfLat)/manifest.tileSize);a<=Math.floor((s.location.lat+halfLat)/manifest.tileSize);a++){
+    for(let b=Math.floor((s.location.lon-halfLon)/manifest.tileSize);b<=Math.floor((s.location.lon+halfLon)/manifest.tileSize);b++){
+      const cell='t'+a+'_'+b;
+      if(manifest.tileSet.has(cell))keys.push(cell);
+    }
   }
   if(!keys.length)return false;
-  status('正在从西马餐厅资料库读取附近地点…');
-  const responses=await Promise.all(keys.map(async cell=>{
-    const response=await fetch('/data/peninsula/'+cell+'.json',{cache:'force-cache'});
-    if(!response.ok)throw Error('资料块 '+cell+' 读取失败 ('+response.status+')');
-    const json=await response.json();
-    if(!Array.isArray(json.elements))throw Error('资料块格式错误');
-    return json.elements;
-  }));
+  status('正在读取附近 '+keys.length+' 个真实餐厅数据分区…');
+  const results=await Promise.allSettled(keys.map(cell=>
+    fetchStaticJSON('/data/peninsula/'+cell+'.json',x=>Array.isArray(x?.elements))
+  ));
+  const successful=results.filter(x=>x.status==='fulfilled');
+  if(!successful.length){
+    const reason=results.map((x,i)=>keys[i]+': '+x.reason?.message).join(' | ');
+    throw Error('附近餐厅文件均无法读取：'+reason);
+  }
   const dedup=new Map();
-  for(const elements of responses)for(const p of elements)dedup.set(p.type+':'+p.id,p);
-  useRestaurantData([...dedup.values()],k,'西马 OpenStreetMap 实际餐饮地点（更新于 '+new Date(manifest.generatedAt).toLocaleDateString('zh-MY')+'）');
+  for(const result of successful)for(const p of result.value.elements)dedup.set(p.type+':'+p.id,p);
+  const partial=successful.length<keys.length;
+  useRestaurantData([...dedup.values()],k,
+    '西马真实地图资料（更新于 '+new Date(manifest.generatedAt).toLocaleDateString('zh-MY')+'）'+(partial?'，部分地区资料未加载':''));
+  if(partial)toast('部分餐厅数据分区加载失败，当前结果可能不完整。');
   writeRestaurantCache(k,[...dedup.values()]);
   return true;
 }
@@ -173,7 +205,7 @@ async function fetchPlaces(){
     status('目前只支持西马（不包括 Sabah、Sarawak 和 Labuan），请改用西马地区。',true);
     return false;
   }
-  try{if(await loadPeninsulaFood(k))return true;}catch(e){console.warn('Nationwide offline lookup unavailable:',e);}
+  try{if(await loadPeninsulaFood(k))return true;}catch(e){console.warn('MakanPoP 西马数据连接问题:',e.message,e.details||'');status('西马资料连接未成功，正在尝试其他方式…',true);}
 
   if(s.cacheKey===k&&s.places.length)return true;
   // A short-term cache avoids repeatedly loading public Overpass servers.
@@ -230,7 +262,7 @@ async function fetchPlaces(){
     return true;
   }
   s.places=[];s.cacheKey='';
-  const message='无法连上免费地图服务器（不是 Klang 没有餐厅）。请稍后重试，或在正式 HTTPS 网站测试。';
+  const message='餐厅资料暂时连不上。请打开独立预览页重新试；如果整个网页都打不开，请换一个浏览器。';
   status(message,true);
   toast(message);
   console.warn('MakanPoP restaurant lookup failed:',errors.join(' | '));
