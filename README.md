@@ -102,3 +102,15 @@ and must not be represented as universal restaurant photography.
 
 All map data: © OpenStreetMap contributors (ODbL). Photographs, when present,
 follow the license and attribution shown on their individual Commons file pages.
+
+## Address-first gacha and personal restaurant photos
+
+- The current location **does not constrain** a manually chosen target. Example: while physically in Klang, choose `PV15` to search around the actual mapped PV15 building at 2A Jalan Danau Saujana 1, Setapak.
+- The website accepts western-Peninsular locations, city/mall/building names, street-address strings from the OSM extract, and manually supplied `latitude, longitude` coordinates.
+- Address search is built **offline** from the OSM/Geofabrik PBF by `scripts/build-peninsula.py`. It indexes the names, addresses and street names of mapped objects into narrow shards under `/data/peninsula/address-index/`. It is not powered by Google Maps or the public Nominatim geocoding service.
+- A user presses **Search** to look up an address. When ambiguous, it shows concrete mapped location choices. It does not claim all Malaysian addresses are present.
+- The existing cinematic gacha image now has a dedicated 2.5D independently movable dial. Drag the knob to rotate, or press START GACHA. Reflection/exit animations are visual rather than a real 3D physics simulation.
+- For a restaurant with a directly associated licensed Wikimedia Commons photo, the result automatically shows the photo and source/author/license.
+- Otherwise users can click the Google Maps photo lookup link. They can also upload an image they photographed or have permission to use. Personal images are resized through canvas (removing EXIF) and saved with IndexedDB **only in their current browser**; they are not published to other users and not verified by moderators.
+- Users should not expect complete current real photos of every restaurant from free OpenStreetMap: the current mapping has very few directly Commons-linked images.
+- No payment card, proprietary geocoding key, or paid photo API is required. Static photo uploads are on-device only.
