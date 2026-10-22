@@ -1,0 +1,46 @@
+name: Verify lightweight MakanPoP preview
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/test-preview.yml'
+      - 'public/onepage.js'
+      - 'public/index.html'
+      - 'server.mjs'
+
+permissions:
+  contents: read
+
+jobs:
+  smoke-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: preview
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate app JavaScript syntax
+        run: |
+          node --check public/onepage.js
+          node --check public/photo-lookup.js
+          node --check server.mjs
+      - name: Start the preview website and request its files
+        run: |
+          node server.mjs > /tmp/makanpop.log 2>&1 &
+          sleep 3
+          curl --fail --silent --show-error http://localhost:3000/ > /tmp/home.html
+          curl --fail --silent --show-error http://localhost:3000/onepage.js > /tmp/front.js
+          curl --fail --silent --show-error http://localhost:3000/onepage.css > /tmp/front.css
+          grep -q 'id="spin"' /tmp/home.html
+          grep -q 'function fetchStaticJSON' /tmp/front.js
+          echo "Preview website and JavaScript/CSS assets: OK"
+      - name: Verify real nationwide restaurant metadata remains accessible
+        run: |
+          curl --fail --silent --show-error --retry 2 --max-time 25 \
+            https://raw.githubusercontent.com/chongwenyin006-ux/makanpop-site/main/public/data/peninsula/manifest.json \
+            -o /tmp/manifest.json
+          node -e "const m=require('/tmp/manifest.json');if(m.count<1000 || !m.tiles.length) process.exit(2);console.log('Real Peninsular OSM restaurants:',m.count)"
