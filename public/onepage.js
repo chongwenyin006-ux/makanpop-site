@@ -224,6 +224,51 @@ async function choosePlace(q){
 async function gps(){if(!window.isSecureContext||!navigator.geolocation){toast('GPS 需要 HTTPS 和浏览器定位权限。');return}status('正在请求位置权限…');try{const pos=await new Promise((ok,fail)=>navigator.geolocation.getCurrentPosition(ok,fail,{enableHighAccuracy:false,timeout:16000,maximumAge:300000}));s.location={name:'我的 GPS 位置',lat:pos.coords.latitude,lon:pos.coords.longitude,kind:'gps'};s.cacheKey='';s.places=[];s.recent=[];refresh();if($('panel').open)openPanel('filters');status('GPS 定位成功，点击 START GACHA 获取附近餐厅');toast('定位成功！')}catch(e){const msg=e.code===1?'定位权限被拒绝，请允许浏览器使用位置':e.code===2?'目前无法获取设备位置':e.code===3?'GPS 定位超时':'定位失败';status(msg,true);toast(msg)}}
 function key(){return [s.location.lat.toFixed(3),s.location.lon.toFixed(3),s.radius].join(':')}
 
+// Overture Maps is an independent open-data source. Only exact name AND
+// within 35 metres AND explicitly tagged permanently_closed qualifies.
+// A lack of Overture data never proves a place is open or closed.
+let closureManifestPromise=null;
+function matchClosureName(name){
+  return String(name||'').normalize('NFKC').toLowerCase()
+    .replace(/[^\p{L}\p{N}]/gu,'').trim();
+}
+async function closureJSON(path){
+  const url='https://raw.githubusercontent.com/chongwenyin006-ux/makanpop-site/main/public'+path;
+  const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),3500);
+  try{
+    const r=await fetch(url,{signal:ctrl.signal,cache:'default'});
+    if(!r.ok)throw Error('HTTP '+r.status);
+    return await r.json();
+  }finally{clearTimeout(timer)}
+}
+async function filterOvertureClosed(places){
+  try{
+    if(!closureManifestPromise)closureManifestPromise=closureJSON('/data/overture/manifest.json').catch(()=>null);
+    const manifest=await closureManifestPromise;
+    if(!manifest||!Array.isArray(manifest.tiles)||!Number.isFinite(manifest.tileSize))
+      return {places,checked:false,removed:0};
+    const lat=s.location.lat,lon=s.location.lon;
+    const dy=s.radius/110574,dx=s.radius/(111320*Math.cos(lat*Math.PI/180));
+    const available=new Set(manifest.tiles),keys=[];
+    for(let a=Math.floor((lat-dy)/manifest.tileSize);a<=Math.floor((lat+dy)/manifest.tileSize);a++)
+      for(let b=Math.floor((lon-dx)/manifest.tileSize);b<=Math.floor((lon+dx)/manifest.tileSize);b++){
+        const cell='t'+a+'_'+b;if(available.has(cell))keys.push(cell);
+      }
+    if(!keys.length)return {places,checked:true,removed:0};
+    const all=await Promise.all(keys.map(t=>closureJSON('/data/overture/'+t+'.json')));
+    const closed=all.flatMap(x=>Array.isArray(x.closed)?x.closed:[])
+      .filter(x=>x.name&&Number.isFinite(x.lat)&&Number.isFinite(x.lon));
+    const filtered=places.filter(p=>{
+      const name=matchClosureName(p.name);
+      return !closed.some(x=>matchClosureName(x.name)===name&&dist(p.lat,p.lon,x.lat,x.lon)<=35);
+    });
+    return {places:filtered,checked:true,removed:places.length-filtered.length};
+  }catch(error){
+    console.info('Overture status cross-check unavailable:',error.message);
+    return {places,checked:false,removed:0};
+  }
+}
+
 let providerStatusPromise=null;
 async function getProviderStatus(){
   if(providerStatusPromise)return providerStatusPromise;
@@ -355,8 +400,12 @@ async function fetchPlaces(){
       }
       const data=await res.json();
       if(data.provider!=='tomtom'||!Array.isArray(data.elements))throw Error('返回结果不是 TomTom 资料');
-      s.places=normalize(data.elements);s.cacheKey=k;s.recent=[];
-      status('TomTom 返回 '+s.places.length+' 条餐饮地点记录 · 营业状态尚未核实');
+      const candidates=normalize(data.elements);
+      const closure=await filterOvertureClosed(candidates);
+      s.places=closure.places;s.cacheKey=k;s.recent=[];
+      status('TomTom 返回 '+candidates.length+' 条餐饮地点记录'+
+        (closure.checked?'，Overture 同名同位置关闭记录排除 '+closure.removed+' 条':'，Overture 核对暂不可用')+
+        ' · 其余营业状态仍未经验证');
       if(!s.places.length)toast('TomTom 在所选范围内没有返回餐饮地点。试试扩大距离。');
       return true;
     }catch(e){
