@@ -1,0 +1,54 @@
+name: Refresh Overture closure cross-check
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '42 3 8 * *'
+  push:
+    paths:
+      - 'scripts/build-overture-closed.py'
+      - '.github/workflows/build-overture-closed.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: makanpop-overture-status
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 22
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install official Overture CLI
+        run: python -m pip install --disable-pip-version-check overturemaps
+      - name: Download and retain only explicitly closed places
+        run: python scripts/build-overture-closed.py
+      - name: Publish closure snapshot without overwriting web code
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          mkdir -p "$RUNNER_TEMP/overture"
+          cp -a public/data/overture "$RUNNER_TEMP/overture/overture"
+          for attempt in 1 2 3 4 5; do
+            git fetch origin main
+            git reset --hard origin/main
+            rm -rf public/data/overture
+            cp -a "$RUNNER_TEMP/overture/overture" public/data/overture
+            git add -A public/data/overture
+            if git diff --cached --quiet; then exit 0; fi
+            git commit -m "data: refresh Overture confirmed closure tags"
+            if git push origin HEAD:main; then exit 0; fi
+            sleep 3
+          done
+          exit 1
