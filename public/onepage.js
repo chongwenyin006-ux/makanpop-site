@@ -234,10 +234,16 @@ async function getProviderStatus(){
         const res=await fetch('/api/provider-status',{signal:ctrl.signal,cache:'no-store'});
         if(!res.ok)throw Error('HTTP '+res.status);
         const data=await res.json();
-        return data.tomtomEnabled?{provider:'tomtom',enabled:true}:{provider:'osm',enabled:false};
+        const connected=Boolean(data.tomtomEnabled);
+        const notice=$('sourceNote');
+        if(notice)notice.textContent=connected
+          ? '◎ 当前数据源：TomTom Places（位置资料仍需核实）'
+          : '◎ 当前数据源：OpenStreetMap 社区资料 · TomTom 免费 Key 尚未配置';
+        return connected?{provider:'tomtom',enabled:true}:{provider:'osm',enabled:false};
       }finally{clearTimeout(timer)}
     }catch(e){
       console.info('Provider-status endpoint not ready:',e.message);
+      if($('sourceNote'))$('sourceNote').textContent='◎ 当前数据源：OpenStreetMap（尚未连接 TomTom）';
       return {provider:'osm',enabled:false};
     }
   })();
@@ -331,6 +337,10 @@ function useRestaurantData(elements,k,label){
 async function fetchPlaces(){
   const k=key();
   if(s.cacheKey===k&&s.places.length)return true;
+  if(s.location.lon>105.3||s.location.lat>7.5||s.location.lat<1||s.location.lon<99){
+    status('目前仅支持西马，不包含 Sabah、Sarawak 和 Labuan。',true);
+    return false;
+  }
   const provider=await getProviderStatus();
   if(provider.enabled){
     // Explicit, separate mode. No silent switch to older OSM data if TomTom fails.
@@ -514,3 +524,4 @@ $('personalPhotoInput').addEventListener('change',async e=>{
 });
 $('closeResult').onclick=()=>$('result').close();$('reroll').onclick=()=>{$('result').close();window.MakanPoPPhotos?.reset();spin()};$('favAction').onclick=()=>toggleList('favorites');$('blackAction').onclick=()=>toggleList('blacklist');$('spendAction').onclick=()=>{$('spendForm').hidden=!$('spendForm').hidden};$('saveSpend').onclick=()=>{const price=Number($('spendInput').value);if(!(price>0&&price<=1000)){toast('请输入 RM1–RM1000 的金额');return}if(!s.current)return;s.prices[s.current.id]=price;save();$('resultPrice').textContent='你记录的人均 RM'+price;$('resultNote').textContent='这是你的个人消费记录，不是官方菜单价格。';$('spendForm').hidden=true;toast('保存成功！')};
 refresh();status(s.location.kind==='unselected'?'先选择西马位置或使用 GPS，再开始扭蛋':'已选择 '+s.location.name+' · 点击 START GACHA');
+getProviderStatus();
