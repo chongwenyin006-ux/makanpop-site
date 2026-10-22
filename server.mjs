@@ -5,6 +5,7 @@ import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {fetchRestaurantData} from './lib/restaurant-query.mjs';
+import {searchTomTom} from './lib/tomtom-places.mjs';
 
 const projectDir = path.dirname(fileURLToPath(import.meta.url));
 const staticDir = path.resolve(projectDir, 'public');
@@ -14,10 +15,19 @@ const types = { '.html':'text/html; charset=utf-8', '.css':'text/css; charset=ut
 http.createServer(async (req, res) => {
   try {
     const url = new URL(req.url || '/', 'http://localhost');
+    if(url.pathname === '/api/provider-status'){
+      const enabled=Boolean(process.env.TOMTOM_API_KEY?.trim());
+      res.writeHead(200,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store'});
+      return res.end(JSON.stringify({provider:enabled?'tomtom':'osm',tomtomEnabled:enabled,
+        message:enabled?'TomTom API Key 已由服务器配置（营业状态仍不保证）':'TomTom 尚未配置 API Key，当前使用 OSM 社区资料'}));
+    }
     if(url.pathname === '/api/restaurants'){
       try{
-        const data=await fetchRestaurantData(url.searchParams);
-        res.writeHead(200,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'public, max-age=900'});
+        const configured=process.env.TOMTOM_API_KEY?.trim();
+        const data=configured
+          ? await searchTomTom(url.searchParams,configured)
+          : await fetchRestaurantData(url.searchParams);
+        res.writeHead(200,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store'});
         return res.end(JSON.stringify(data));
       }catch(e){
         res.writeHead(e.status||502,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store'});
