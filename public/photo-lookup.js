@@ -9,6 +9,59 @@
 (function(){
   'use strict';
   let requestNumber=0;
+  let localObjectUrl=null;
+  const DB_NAME='makanpop-personal-restaurant-pictures';
+  function openPhotoDB(){
+    return new Promise((resolve,reject)=>{
+      if(!window.indexedDB)return reject(Error('此浏览器不支持私人照片储存'));
+      const request=indexedDB.open(DB_NAME,1);
+      request.onupgradeneeded=()=>{
+        const db=request.result;
+        if(!db.objectStoreNames.contains('photos'))db.createObjectStore('photos',{keyPath:'id'});
+      };
+      request.onsuccess=()=>resolve(request.result);
+      request.onerror=()=>reject(request.error||Error('照片数据库无法打开'));
+    });
+  }
+  async function readPersonalPhoto(id){
+    const db=await openPhotoDB();
+    try{
+      return await new Promise((resolve,reject)=>{
+        const tx=db.transaction('photos','readonly');
+        const req=tx.objectStore('photos').get(id);
+        req.onsuccess=()=>resolve(req.result?.blob||null);
+        req.onerror=()=>reject(req.error);
+      });
+    }finally{db.close()}
+  }
+  async function savePersonalPhoto(place,file){
+    if(!place||!place.id)throw Error('请先抽到一家餐厅');
+    if(!file||!['image/jpeg','image/png','image/webp'].includes(file.type))throw Error('请选择 JPG、PNG 或 WebP 实拍照片');
+    if(file.size>10*1024*1024)throw Error('照片最大 10MB');
+    const bitmap=await createImageBitmap(file);
+    const canvas=document.createElement('canvas');
+    const scale=Math.min(1,1280/Math.max(bitmap.width,bitmap.height));
+    canvas.width=Math.max(1,Math.round(bitmap.width*scale));
+    canvas.height=Math.max(1,Math.round(bitmap.height*scale));
+    canvas.getContext('2d').drawImage(bitmap,0,0,canvas.width,canvas.height);
+    bitmap.close?.();
+    const blob=await new Promise((resolve,reject)=>
+      canvas.toBlob(x=>x?resolve(x):reject(Error('无法压缩照片')),'image/jpeg',0.83)
+    );
+    // Re-encoding through canvas discards original EXIF/GPS metadata.
+    const db=await openPhotoDB();
+    try{
+      await new Promise((resolve,reject)=>{
+        const tx=db.transaction('photos','readwrite');
+        tx.objectStore('photos').put({id:place.id,blob,at:Date.now()});
+        tx.oncomplete=()=>resolve();
+        tx.onerror=()=>reject(tx.error||Error('照片储存失败'));
+        tx.onabort=()=>reject(tx.error||Error('照片储存被取消'));
+      });
+    }finally{db.close()}
+    await show(place);
+  }
+
   const el=id=>document.getElementById(id);
   const NO_PHOTO='🖼️ 这家餐厅暂无能确认来源的真实照片。不会使用其他店的图片代替。';
   const cleanText=s=>String(s||'').replace(/<[^>]*>/g,'').replace(/\s+/g,' ').trim().slice(0,130);
@@ -41,6 +94,8 @@
     return titleFromTag(tags.wikimedia_commons)||titleFromTag(tags.image)||null;
   }
   function noPhoto(message=NO_PHOTO){
+    if(localObjectUrl){URL.revokeObjectURL(localObjectUrl);localObjectUrl=null;}
+    el('photoCreditLink').hidden=false;
     el('restaurantPhoto').hidden=true;
     el('restaurantPhotoImg').removeAttribute('src');
     el('photoUnavailable').textContent=message;
@@ -50,6 +105,23 @@
   async function show(place){
     const id=++requestNumber;
     noPhoto();
+    // Prefer a genuine user-provided photo for this exact restaurant ID.
+    try{
+      const personal=await readPersonalPhoto(place?.id);
+      if(personal&&id===requestNumber){
+        localObjectUrl=URL.createObjectURL(personal);
+        const image=el('restaurantPhotoImg');
+        image.onload=()=>{if(id!==requestNumber)return;
+          el('photoUnavailable').hidden=true;el('surpriseIcon').hidden=true;
+          el('restaurantPhoto').hidden=false;};
+        image.onerror=()=>{if(id===requestNumber)noPhoto()};
+        image.alt='用户自己上传的 '+place.name+' 实拍照（仅此浏览器可见，未全站核实）';
+        el('photoCreditText').textContent='我的实拍照片 · 只存于本机 · 不是全站核实的营业照片';
+        el('photoCreditLink').hidden=true;
+        image.src=localObjectUrl;
+        return;
+      }
+    }catch(err){console.info('Personal photo storage unavailable:',err.message)}
     const title=directSource(place?.tags);
     if(!title)return;
     el('photoUnavailable').textContent='正在验证这家店关联的照片和授权…';
@@ -92,5 +164,5 @@
       console.info('No verified restaurant-specific Commons photo:',err.message);
     }finally{clearTimeout(timer)}
   }
-  window.MakanPoPPhotos={show,directSource,reset:()=>{requestNumber++;noPhoto()}};
+  window.MakanPoPPhotos={show,directSource,savePersonalPhoto,reset:()=>{requestNumber++;noPhoto()}};
 })();
