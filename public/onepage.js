@@ -224,6 +224,27 @@ async function choosePlace(q){
 async function gps(){if(!window.isSecureContext||!navigator.geolocation){toast('GPS 需要 HTTPS 和浏览器定位权限。');return}status('正在请求位置权限…');try{const pos=await new Promise((ok,fail)=>navigator.geolocation.getCurrentPosition(ok,fail,{enableHighAccuracy:false,timeout:16000,maximumAge:300000}));s.location={name:'我的 GPS 位置',lat:pos.coords.latitude,lon:pos.coords.longitude,kind:'gps'};s.cacheKey='';s.places=[];s.recent=[];refresh();if($('panel').open)openPanel('filters');status('GPS 定位成功，点击 START GACHA 获取附近餐厅');toast('定位成功！')}catch(e){const msg=e.code===1?'定位权限被拒绝，请允许浏览器使用位置':e.code===2?'目前无法获取设备位置':e.code===3?'GPS 定位超时':'定位失败';status(msg,true);toast(msg)}}
 function key(){return [s.location.lat.toFixed(3),s.location.lon.toFixed(3),s.radius].join(':')}
 
+let providerStatusPromise=null;
+async function getProviderStatus(){
+  if(providerStatusPromise)return providerStatusPromise;
+  providerStatusPromise=(async()=>{
+    try{
+      const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),4000);
+      try{
+        const res=await fetch('/api/provider-status',{signal:ctrl.signal,cache:'no-store'});
+        if(!res.ok)throw Error('HTTP '+res.status);
+        const data=await res.json();
+        return data.tomtomEnabled?{provider:'tomtom',enabled:true}:{provider:'osm',enabled:false};
+      }finally{clearTimeout(timer)}
+    }catch(e){
+      console.info('Provider-status endpoint not ready:',e.message);
+      return {provider:'osm',enabled:false};
+    }
+  })();
+  return providerStatusPromise;
+}
+
+
 let nationalManifest=null;
 let nationalPromise=null;
 let nationalLastAttempt=0;
@@ -309,6 +330,33 @@ function useRestaurantData(elements,k,label){
 }
 async function fetchPlaces(){
   const k=key();
+  if(s.cacheKey===k&&s.places.length)return true;
+  const provider=await getProviderStatus();
+  if(provider.enabled){
+    // Explicit, separate mode. No silent switch to older OSM data if TomTom fails.
+    status('正在通过 TomTom Places 查找 '+s.location.name+' 附近餐厅…');
+    try{
+      const search=new URLSearchParams({lat:s.location.lat,lon:s.location.lon,radius:s.radius});
+      const res=await fetch('/api/restaurants?'+search.toString(),{cache:'no-store'});
+      if(!res.ok){
+        let message='TomTom HTTP '+res.status;
+        try{const obj=await res.json();if(obj.error)message=obj.error}catch(e){}
+        throw Error(message);
+      }
+      const data=await res.json();
+      if(data.provider!=='tomtom'||!Array.isArray(data.elements))throw Error('返回结果不是 TomTom 资料');
+      s.places=normalize(data.elements);s.cacheKey=k;s.recent=[];
+      status('TomTom 返回 '+s.places.length+' 条餐饮地点记录 · 营业状态尚未核实');
+      if(!s.places.length)toast('TomTom 在所选范围内没有返回餐饮地点。试试扩大距离。');
+      return true;
+    }catch(e){
+      status('TomTom 查询失败：'+e.message+'。当前未自动切换到旧地图数据。',true);
+      toast('TomTom 无法查询。请检查免费额度、密钥权限或预览服务。');
+      console.warn('TomTom places failed:',e);
+      return false;
+    }
+  }
+
   if(s.location.lon>105.3||s.location.lat>7.5||s.location.lat<1||s.location.lon<99){
     status('目前只支持西马（不包括 Sabah、Sarawak 和 Labuan），请改用西马地区。',true);
     return false;
@@ -379,7 +427,11 @@ async function fetchPlaces(){
 
 function wait(ms){return new Promise(r=>setTimeout(r,ms))}
 async function spin(){if(s.busy)return;if(s.location.kind==='unselected'){openPanel('filters');toast('先用 GPS 定位，或输入你想搜的西马城市／商场');return;}s.busy=true;$('spin').disabled=true;$('spin').textContent='正在寻找美食…';try{if(!(await fetchPlaces()))return;const candidates=eligible();if(!candidates.length){const txt=s.places.length?'没有符合当前筛选的餐厅。试试取消食物偏好、扩大预算或允许未知价格。':'这个范围没有取得餐厅记录。试试增加搜索距离或换一个地点。';status(txt,true);toast(txt);return}const unseen=candidates.filter(x=>!s.recent.includes(x.id));const pool=unseen.length?unseen:candidates;const p=pool[Math.floor(Math.random()*pool.length)];s.recent=[p.id,...s.recent].slice(0,Math.min(6,candidates.length-1));s.current=p;const machine=$('machine');machine.classList.add('spinning');status('转出一颗美食胶囊中…');await wait(1850);machine.classList.remove('spinning');result(p);status('抽中了 '+p.name+' 的地图记录，请先核实仍在营业。')}finally{$('machine').classList.remove('spinning');s.busy=false;$('spin').disabled=false;$('spin').textContent='◉ START GACHA ↗'}}
-function result(p){window.MakanPoPPhotos?.show(p);$('osmPlaceLink').href='https://www.openstreetmap.org/'+encodeURIComponent(p.id.split(':')[0])+'/'+encodeURIComponent(p.id.split(':')[1]);$('photosSearchLink').href='https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(p.name+', '+(p.address||'')+', '+p.lat+','+p.lon);const cuisine=String(p.tags.cuisine||'').replaceAll(';',' / ')||({cafe:'咖啡馆',fast_food:'快餐',restaurant:'餐厅',food_court:'美食广场',ice_cream:'冰淇淋'}[p.tags.amenity]||'餐饮地点');$('resultName').textContent=p.name;$('resultType').textContent=cuisine;$('resultDist').textContent=(p.dist/1000).toFixed(1)+' km';$('resultAddress').textContent=p.address||'地图坐标 '+p.lat.toFixed(5)+', '+p.lon.toFixed(5);const price=Number(s.prices[p.id]);$('resultPrice').textContent=price>0?'你记录的人均 RM'+price:'价格未知';$('resultNote').textContent=price>0?'这是你自己的消费记录，不是餐厅官方菜单报价。':'没有可核实的菜单价格；不能判断是否符合当前 RM 预算，营业状态也未经核实。';$('navLink').href='https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(p.name+', '+(p.tags['addr:city']||p.tags['addr:suburb']||s.location.name)+', '+p.lat+','+p.lon);$('favAction').textContent=s.favorites.some(x=>x.id===p.id)?'♥ 已收藏':'♡ 收藏';$('blackAction').textContent=s.blacklist.some(x=>x.id===p.id)?'✓ 已 Blacklist':'⊘ Blacklist';$('spendForm').hidden=true;$('result').showModal()}
+function result(p){window.MakanPoPPhotos?.show(p);
+  const tomtom=p.id.startsWith('tomtom:');
+  $('osmPlaceLink').parentElement.hidden=tomtom;
+  $('resultSource').textContent=tomtom?'TomTom Places 搜索结果（非营业认证）':'OpenStreetMap 社区收录地点（非营业认证）';
+  if(!tomtom)$('osmPlaceLink').href='https://www.openstreetmap.org/'+encodeURIComponent(p.id.split(':')[0])+'/'+encodeURIComponent(p.id.split(':')[1]);$('photosSearchLink').href='https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(p.name+', '+(p.address||'')+', '+p.lat+','+p.lon);const cuisine=String(p.tags.cuisine||'').replaceAll(';',' / ')||({cafe:'咖啡馆',fast_food:'快餐',restaurant:'餐厅',food_court:'美食广场',ice_cream:'冰淇淋'}[p.tags.amenity]||'餐饮地点');$('resultName').textContent=p.name;$('resultType').textContent=cuisine;$('resultDist').textContent=(p.dist/1000).toFixed(1)+' km';$('resultAddress').textContent=p.address||'地图坐标 '+p.lat.toFixed(5)+', '+p.lon.toFixed(5);const price=Number(s.prices[p.id]);$('resultPrice').textContent=price>0?'你记录的人均 RM'+price:'价格未知';$('resultNote').textContent=price>0?'这是你自己的消费记录，不是餐厅官方菜单报价。':'没有可核实的菜单价格；不能判断是否符合当前 RM 预算，营业状态也未经核实。';$('navLink').href='https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(p.name+', '+(p.tags['addr:city']||p.tags['addr:suburb']||s.location.name)+', '+p.lat+','+p.lon);$('favAction').textContent=s.favorites.some(x=>x.id===p.id)?'♥ 已收藏':'♡ 收藏';$('blackAction').textContent=s.blacklist.some(x=>x.id===p.id)?'✓ 已 Blacklist':'⊘ Blacklist';$('spendForm').hidden=true;$('result').showModal()}
 function toggleList(type){const p=s.current;if(!p)return;const already=s[type].some(x=>x.id===p.id);s[type]=already?s[type].filter(x=>x.id!==p.id):[...s[type],{id:p.id,name:p.name}];save();if(type==='blacklist'&&!already){$('result').close();toast(p.name+' 已加入 Blacklist，以后不会抽中')}else{toast(already?'已从列表移除':'已收藏');resultUpdateActions()}}
 function resultUpdateActions(){if(!s.current)return;$('favAction').textContent=s.favorites.some(x=>x.id===s.current.id)?'♥ 已收藏':'♡ 收藏';$('blackAction').textContent=s.blacklist.some(x=>x.id===s.current.id)?'✓ 已 Blacklist':'⊘ Blacklist'}
 async function runQuickAddress(){
