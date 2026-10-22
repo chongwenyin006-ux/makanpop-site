@@ -6,6 +6,7 @@ Sources: Geofabrik's OpenStreetMap extract (ODbL) and geoBoundaries state polygo
 """
 import json
 import math
+import re
 import os
 import pathlib
 import shutil
@@ -168,11 +169,18 @@ class FoodPlaces(osmium.SimpleHandler):
         if key in self.address_seen:
             return
         self.address_seen.add(key)
-        first = label.casefold().strip()[:1]
-        if not first:
+        # Avoid a 20 MB 'Jalan ...' index: index by the distinctive part
+        # of the address, using the same rules as the browser search.
+        words = re.findall(r"[^\\W_]+", label.casefold(), flags=re.UNICODE)
+        stop = {"jalan", "jln", "lorong", "persiaran", "taman", "kampung",
+                "kg", "no", "lot", "unit", "block", "blok", "jalanraya", "jalanr",
+                "street", "road", "rd", "apartment", "apartments"}
+        meaningful = [w for w in words if w not in stop and
+                      not re.match(r"^\\d+[a-z]?$", w)]
+        primary = meaningful[0] if meaningful else (words[0] if words else "")
+        if not primary:
             return
-        # group ASCII letters/digits, route Unicode names to a single shard
-        shard = first if ("a" <= first <= "z" or "0" <= first <= "9") else "other"
+        shard = primary[:3] if re.match(r"^[a-z0-9]+$", primary) else "other"
         item = {"n":label, "a":number_name if number_name and number_name != label else "",
                 "s":str(road)[:95], "c":city, "p":postcode, "u":unit,
                 "lat":round(lat,6), "lon":round(lon,6)}
