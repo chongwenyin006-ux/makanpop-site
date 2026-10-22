@@ -40,7 +40,7 @@ function foodMatch(p,id){const row=FOOD.find(x=>x[0]===id);if(!row)return false;
 function eligible(){return s.places.filter(p=>!s.closedReports.some(x=>x.id===p.id)).filter(p=>!isExplicitlyClosed(p.tags)).filter(p=>!s.blacklist.some(x=>x.id===p.id)).filter(p=>!s.want.length||s.want.some(id=>foodMatch(p,id))).filter(p=>!s.avoid.some(id=>foodMatch(p,id))).filter(p=>{const price=Number(s.prices[p.id]);return price>0?(price>=s.min&&price<=s.max):s.unknown})}
 function locationHTML(){return '<div class="section"><h3>📍 你想抽哪里的餐厅？</h3><p class="helper">人在 Klang，也可以输入 PV15、Setapak、具体地址或商场。选择手动地址后，不会使用当前 GPS。</p><div class="controlrow"><button class="secondary" data-action="gps">◎ 使用我的 GPS</button><button class="secondary" data-place="PV15 · Setapak">📍 PV15</button><button class="secondary" data-place="Klang / 巴生">📍 Klang</button></div><div class="field" style="margin-top:15px"><label for="placeInput">输入西马建筑物／街道／地址／坐标</label><input id="placeInput" list="placeList" autocomplete="street-address" placeholder="例如 PV15, Jalan Danau Saujana 1, Setapak"><datalist id="placeList">'+LOCS.map(x=>'<option value="'+esc(x[0])+'">').join('')+'</datalist></div><button class="chip" data-action="place" style="margin-top:8px">🔎 搜索这个地址 →</button><div id="addressMatches" class="address-matches" aria-live="polite"></div><p id="placeSearchState" class="helper">按搜索按钮才会查询，地址必须已收录于 OpenStreetMap；也可以粘贴纬度、经度。</p></div>'}
 function foodChips(mode){return '<div class="chips">'+FOOD.map(x=>'<button class="chip '+(mode==='avoid'?'avoid':'')+'" data-food="'+esc(x[0])+'" data-mode="'+mode+'" aria-pressed="'+s[mode].includes(x[0])+'">'+x[1]+' '+esc(x[0])+'</button>').join('')+'</div>'}
-function filterHTML(){return locationHTML()+'<div class="section"><h3>🍜 想吃什么？</h3><p class="helper">可多选。只有地图资料能识别的料理才可按类别准确筛选。</p>'+foodChips('want')+'</div><div class="section"><h3>🚫 今天不想吃？</h3><p class="helper">排除料理类型；公开地图没有完整食材／过敏原资料，不提供安全保证。</p>'+foodChips('avoid')+'</div><div class="section"><h3>💸 每人预算与距离</h3><div class="fieldset"><label class="field">最低预算 RM<input id="minInput" type="number" min="0" max="1000" value="'+s.min+'"></label><label class="field">最高预算 RM<input id="maxInput" type="number" min="1" max="1000" value="'+s.max+'"></label></div><div class="chips" style="margin-top:12px">'+[10,20,30,50,100].map(x=>'<button class="chip" data-budget="'+x+'">RM '+x+'</button>').join('')+'</div><div class="field" style="margin-top:16px"><label for="radiusInput">搜索半径</label><select id="radiusInput">'+[300,500,1000,3000,5000,8000,10000].map(x=>'<option value="'+x+'" '+(x===s.radius?'selected':'')+'>'+(x/1000)+' km</option>').join('')+'</select></div><label class="helper" style="display:flex;align-items:center;gap:8px;margin-top:15px"><input type="checkbox" id="unknownPrice" '+(s.unknown?'checked':'')+'>允许显示没有价格资料的真实餐厅</label><p class="helper">OpenStreetMap 通常没有菜单价钱。RM 筛选仅能核对你自己记录过的价格，不能保证其他餐厅符合预算。</p></div><div class="controlrow"><button class="secondary" data-action="clear">重置口味筛选</button></div>'}
+function filterHTML(){return locationHTML()+'<div class="section"><h3>🍜 想吃什么？</h3><p class="helper">可多选。只有地图资料能识别的料理才可按类别准确筛选。</p>'+foodChips('want')+'</div><div class="section"><h3>🚫 今天不想吃？</h3><p class="helper">排除料理类型；公开地图没有完整食材／过敏原资料，不提供安全保证。</p>'+foodChips('avoid')+'</div><div class="section"><h3>💸 每人预算与距离</h3><div class="fieldset"><label class="field">最低预算 RM<input id="minInput" type="number" min="0" max="1000" value="'+s.min+'"></label><label class="field">最高预算 RM<input id="maxInput" type="number" min="1" max="1000" value="'+s.max+'"></label></div><div class="chips" style="margin-top:12px">'+[10,20,30,50,100].map(x=>'<button class="chip" data-budget="'+x+'">RM '+x+'</button>').join('')+'</div><div class="field" style="margin-top:16px"><label for="radiusInput">搜索半径</label><select id="radiusInput">'+[300,500,1000,3000,5000,8000,10000].map(x=>'<option value="'+x+'" '+(x===s.radius?'selected':'')+'>'+(x/1000)+' km</option>').join('')+'</select></div><label class="helper" style="display:flex;align-items:center;gap:8px;margin-top:15px"><input type="checkbox" id="unknownPrice" '+(s.unknown?'checked':'')+'>允许显示没有价格资料的地图餐饮记录</label><p class="helper">OpenStreetMap 通常没有菜单价钱。RM 筛选仅能核对你自己记录过的价格，不能保证其他餐厅符合预算。</p></div><div class="controlrow"><button class="secondary" data-action="clear">重置口味筛选</button></div>'}
 function listHTML(type){const list=s[type];const result='<p class="helper">记录保存在你自己的浏览器，换设备不会自动同步。</p>'+(list.length?list.map(x=>'<div class="listitem"><span>'+esc(x.name)+'</span><button data-remove="'+esc(x.id)+'" data-list="'+type+'">移除</button></div>').join(''):'<p class="empty">这里暂时没有餐厅。</p>');return type==='blacklist'?result+'<div class="section"><h3>🚫 我标记为永久关闭的餐厅</h3><p class="helper">这些餐厅已在本设备的抽选中排除；尚未经过全站核实。</p>'+(s.closedReports.length?s.closedReports.map(x=>'<div class="listitem"><span>'+esc(x.name)+'</span><button data-remove="'+esc(x.id)+'" data-list="closedReports">撤销标记</button></div>').join(''):'<p class="empty">还没有标记的餐厅。</p>')+'</div>':result}
 function themeHTML(){return '<div class="section"><h3>🎨 换一个心情</h3><div class="chips">'+THEMES.map(x=>'<button class="chip themechip" data-theme="'+x[0]+'" aria-pressed="'+(s.theme===x[0])+'"><span class="swatch" style="background:'+x[2]+'"></span>'+x[1]+'</button>').join('')+'</div></div><div class="section"><h3>自己选主色</h3><p class="helper">只改变界面强调色，餐厅资料不会改变。</p><input id="customColor" type="color" value="'+(s.custom||'#ed4b50')+'"><button class="chip" data-action="clear-color">恢复主题默认颜色</button></div>'}
 
@@ -103,7 +103,7 @@ function updateLocationSuggestions(query=''){
     candidates.map(x=>'<option value="'+esc(directoryLabel(x))+'"></option>').join('');
   const state=$('placeSearchState');
   if(state)state.textContent=directory?
-    '西马地区／商场索引已载入，共 '+directory.length+' 个真实地图地点。商场内商店数量取决于地图收录。':
+    '西马地图地点索引已载入，共 '+directory.length+' 条社区收录记录（不等于已核实）。商场内商店数量取决于地图收录。':
     '西马地点索引暂未生成。仍可使用上面的预设城市或 GPS。';
 }
 
@@ -128,7 +128,7 @@ async function readAddressShard(first){
 function applyLocation(item,kind='address'){
   s.location={name:item.name,lat:item.lat,lon:item.lon,kind};
   s.cacheKey='';s.places=[];s.recent=[];
-  refresh();status('已选择 '+item.name+'，现在可以抽这里附近的真实餐厅。');
+  refresh();status('已选择 '+item.name+'，可抽附近的地图餐饮地点（营业未核实）。');
   if($('panel').open)openPanel('filters');
   toast('搜索地点：'+item.name+' · 与你目前 GPS 位置无关');
 }
@@ -195,7 +195,7 @@ async function searchAddress(query){
   const box=$('addressMatches');
   if(box){
     if(addressMatches.length){
-      box.innerHTML='<p class="helper">找到以下真实地图地址，请选择正确地点：</p>'+
+      box.innerHTML='<p class="helper">以下是 OpenStreetMap 收录地址（可能过时），请选择正确目标：</p>'+
         addressMatches.map((m,i)=>'<button type="button" class="address-result" data-address-index="'+i+'">📍 '+esc(m.name)+' <span>→</span></button>').join('');
       $('placeSearchState').textContent='不是所有门牌都有地图资料；请选择与目标一致的结果。';
     }else{
@@ -258,7 +258,7 @@ async function loadPeninsulaFood(k){
     }
   }
   if(!keys.length)return false;
-  status('正在读取附近 '+keys.length+' 个真实餐厅数据分区…');
+  status('正在读取附近 '+keys.length+' 个地图餐饮分区…');
   const results=await Promise.allSettled(keys.map(cell=>
     fetchStaticJSON('/data/peninsula/'+cell+'.json',x=>Array.isArray(x?.elements))
   ));
@@ -271,7 +271,7 @@ async function loadPeninsulaFood(k){
   for(const result of successful)for(const p of result.value.elements)dedup.set(p.type+':'+p.id,p);
   const partial=successful.length<keys.length;
   useRestaurantData([...dedup.values()],k,
-    '西马真实地图资料（更新于 '+new Date(manifest.generatedAt).toLocaleDateString('zh-MY')+'）'+(partial?'，部分地区资料未加载':''));
+    '西马 OSM 地点资料（提取于 '+new Date(manifest.generatedAt).toLocaleDateString('zh-MY')+'）'+(partial?'，部分地区资料未加载':''));
   if(partial)toast('部分餐厅数据分区加载失败，当前结果可能不完整。');
   writeRestaurantCache(k,[...dedup.values()]);
   return true;
@@ -304,7 +304,7 @@ async function fetchJsonWithDeadline(url,ms,opts={}){
 }
 function useRestaurantData(elements,k,label){
   s.places=normalize(elements);s.cacheKey=k;s.recent=[];
-  status(label+'：找到 '+s.places.length+' 家真实餐厅记录');
+  status(label+'：找到 '+s.places.length+' 条餐饮记录，营业状态未核实');
   return true;
 }
 async function fetchPlaces(){
@@ -326,7 +326,7 @@ async function fetchPlaces(){
       const snapshot=await fetchJsonWithDeadline('/data/klang-restaurants.json',7000);
       if(snapshot.elements.length>=20){
         const date=snapshot.generatedAt?new Date(snapshot.generatedAt).toLocaleDateString('zh-MY'):'日期未知';
-        const result=useRestaurantData(snapshot.elements,k,'Klang 实际 OpenStreetMap 餐厅资料（更新于 '+date+'）');
+        const result=useRestaurantData(snapshot.elements,k,'Klang OSM 地点资料（提取于 '+date+'）');
         // Keep a local backup if the static file becomes temporarily unavailable.
         writeRestaurantCache(k,snapshot.elements);
         return result;
@@ -337,7 +337,7 @@ async function fetchPlaces(){
   if(fresh)return useRestaurantData(fresh.elements,k,'已读取最近缓存的地图资料');
   const q=new URLSearchParams({lat:s.location.lat,lon:s.location.lon,radius:s.radius});
   const errors=[];
-  status('正在查找 '+s.location.name+' 的真实餐厅…');
+  status('正在查找 '+s.location.name+' 的社区地图餐饮记录…');
   try{
     const data=await fetchJsonWithDeadline('/api/restaurants?'+q.toString(),25000);
     writeRestaurantCache(k,data.elements);
@@ -365,7 +365,7 @@ async function fetchPlaces(){
   const previous=readRestaurantCache(k);
   if(previous){
     const stamp=new Date(previous.at).toLocaleString('zh-MY');
-    useRestaurantData(previous.elements,k,'当前地图服务不可用，使用之前获取的真实餐厅缓存');
+    useRestaurantData(previous.elements,k,'当前地图服务不可用，使用旧社区地图记录（营业情况可能变化）');
     toast('当前网络查询失败，已使用 '+stamp+' 保存的地图记录。餐厅资料可能已变动。');
     return true;
   }
@@ -378,8 +378,8 @@ async function fetchPlaces(){
 }
 
 function wait(ms){return new Promise(r=>setTimeout(r,ms))}
-async function spin(){if(s.busy)return;if(s.location.kind==='unselected'){openPanel('filters');toast('先用 GPS 定位，或输入你想搜的西马城市／商场');return;}s.busy=true;$('spin').disabled=true;$('spin').textContent='正在寻找美食…';try{if(!(await fetchPlaces()))return;const candidates=eligible();if(!candidates.length){const txt=s.places.length?'没有符合当前筛选的餐厅。试试取消食物偏好、扩大预算或允许未知价格。':'这个范围没有取得餐厅记录。试试增加搜索距离或换一个地点。';status(txt,true);toast(txt);return}const unseen=candidates.filter(x=>!s.recent.includes(x.id));const pool=unseen.length?unseen:candidates;const p=pool[Math.floor(Math.random()*pool.length)];s.recent=[p.id,...s.recent].slice(0,Math.min(6,candidates.length-1));s.current=p;const machine=$('machine');machine.classList.add('spinning');status('转出一颗美食胶囊中…');await wait(1850);machine.classList.remove('spinning');result(p);status('抽中了 '+p.name+' · 来自真实地图资料')}finally{$('machine').classList.remove('spinning');s.busy=false;$('spin').disabled=false;$('spin').textContent='◉ START GACHA ↗'}}
-function result(p){window.MakanPoPPhotos?.show(p);$('osmPlaceLink').href='https://www.openstreetmap.org/'+encodeURIComponent(p.id.split(':')[0])+'/'+encodeURIComponent(p.id.split(':')[1]);$('photosSearchLink').href='https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(p.name+', '+(p.address||'')+', '+p.lat+','+p.lon);const cuisine=String(p.tags.cuisine||'').replaceAll(';',' / ')||({cafe:'咖啡馆',fast_food:'快餐',restaurant:'餐厅',food_court:'美食广场',ice_cream:'冰淇淋'}[p.tags.amenity]||'餐饮地点');$('resultName').textContent=p.name;$('resultType').textContent=cuisine;$('resultDist').textContent=(p.dist/1000).toFixed(1)+' km';$('resultAddress').textContent=p.address||'地图坐标 '+p.lat.toFixed(5)+', '+p.lon.toFixed(5);const price=Number(s.prices[p.id]);$('resultPrice').textContent=price>0?'你记录的人均 RM'+price:'价格未知';$('resultNote').textContent=price>0?'这是你自己的消费记录，不是餐厅官方菜单报价。':'OpenStreetMap 没有提供可核实的菜单价格；当前预算可能不匹配。';$('navLink').href='https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(p.lat+','+p.lon);$('favAction').textContent=s.favorites.some(x=>x.id===p.id)?'♥ 已收藏':'♡ 收藏';$('blackAction').textContent=s.blacklist.some(x=>x.id===p.id)?'✓ 已 Blacklist':'⊘ Blacklist';$('spendForm').hidden=true;$('result').showModal()}
+async function spin(){if(s.busy)return;if(s.location.kind==='unselected'){openPanel('filters');toast('先用 GPS 定位，或输入你想搜的西马城市／商场');return;}s.busy=true;$('spin').disabled=true;$('spin').textContent='正在寻找美食…';try{if(!(await fetchPlaces()))return;const candidates=eligible();if(!candidates.length){const txt=s.places.length?'没有符合当前筛选的餐厅。试试取消食物偏好、扩大预算或允许未知价格。':'这个范围没有取得餐厅记录。试试增加搜索距离或换一个地点。';status(txt,true);toast(txt);return}const unseen=candidates.filter(x=>!s.recent.includes(x.id));const pool=unseen.length?unseen:candidates;const p=pool[Math.floor(Math.random()*pool.length)];s.recent=[p.id,...s.recent].slice(0,Math.min(6,candidates.length-1));s.current=p;const machine=$('machine');machine.classList.add('spinning');status('转出一颗美食胶囊中…');await wait(1850);machine.classList.remove('spinning');result(p);status('抽中了 '+p.name+' 的地图记录，请先核实仍在营业。')}finally{$('machine').classList.remove('spinning');s.busy=false;$('spin').disabled=false;$('spin').textContent='◉ START GACHA ↗'}}
+function result(p){window.MakanPoPPhotos?.show(p);$('osmPlaceLink').href='https://www.openstreetmap.org/'+encodeURIComponent(p.id.split(':')[0])+'/'+encodeURIComponent(p.id.split(':')[1]);$('photosSearchLink').href='https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(p.name+', '+(p.address||'')+', '+p.lat+','+p.lon);const cuisine=String(p.tags.cuisine||'').replaceAll(';',' / ')||({cafe:'咖啡馆',fast_food:'快餐',restaurant:'餐厅',food_court:'美食广场',ice_cream:'冰淇淋'}[p.tags.amenity]||'餐饮地点');$('resultName').textContent=p.name;$('resultType').textContent=cuisine;$('resultDist').textContent=(p.dist/1000).toFixed(1)+' km';$('resultAddress').textContent=p.address||'地图坐标 '+p.lat.toFixed(5)+', '+p.lon.toFixed(5);const price=Number(s.prices[p.id]);$('resultPrice').textContent=price>0?'你记录的人均 RM'+price:'价格未知';$('resultNote').textContent=price>0?'这是你自己的消费记录，不是餐厅官方菜单报价。':'没有可核实的菜单价格；不能判断是否符合当前 RM 预算，营业状态也未经核实。';$('navLink').href='https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(p.name+', '+(p.tags['addr:city']||p.tags['addr:suburb']||s.location.name)+', '+p.lat+','+p.lon);$('favAction').textContent=s.favorites.some(x=>x.id===p.id)?'♥ 已收藏':'♡ 收藏';$('blackAction').textContent=s.blacklist.some(x=>x.id===p.id)?'✓ 已 Blacklist':'⊘ Blacklist';$('spendForm').hidden=true;$('result').showModal()}
 function toggleList(type){const p=s.current;if(!p)return;const already=s[type].some(x=>x.id===p.id);s[type]=already?s[type].filter(x=>x.id!==p.id):[...s[type],{id:p.id,name:p.name}];save();if(type==='blacklist'&&!already){$('result').close();toast(p.name+' 已加入 Blacklist，以后不会抽中')}else{toast(already?'已从列表移除':'已收藏');resultUpdateActions()}}
 function resultUpdateActions(){if(!s.current)return;$('favAction').textContent=s.favorites.some(x=>x.id===s.current.id)?'♥ 已收藏':'♡ 收藏';$('blackAction').textContent=s.blacklist.some(x=>x.id===s.current.id)?'✓ 已 Blacklist':'⊘ Blacklist'}
 async function runQuickAddress(){
