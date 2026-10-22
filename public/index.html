@@ -33,9 +33,14 @@
     </section>
     <section class="stage" aria-label="大型 MakanPoP 扭蛋机">
       <div class="machine" id="machine">
-        <img src="/assets/gacha-machine.webp" draggable="false" alt="MakanPoP 巨型透明玻璃红色美食扭蛋机，装满食物胶囊">
-        <button class="knob" id="knob" type="button" aria-label="点击或转动扭蛋机把手开始抽餐厅" title="TURN & EAT!"></button>
-        <div class="capsule-drop" aria-hidden="true"></div>
+        <img class="machine-photo" src="/assets/gacha-machine.webp" draggable="false" alt="MakanPoP 红白色透明玻璃食物扭蛋机">
+        <div class="machine-glass" aria-hidden="true"></div>
+        <div class="machine-base-glow" aria-hidden="true"></div>
+        <button class="knob" id="knob" type="button" aria-label="按下或用手指旋转红色扭蛋机把手，抽取附近餐厅" title="TURN & EAT!">
+          <img class="knob-image" src="/assets/turn-knob.webp" draggable="false" alt="">
+        </button>
+        <div class="capsule-drop" aria-hidden="true"><span class="capsule-stamp">M</span></div>
+        <span class="turn-hint" aria-hidden="true">↻ TURN TO POP!</span>
       </div>
       <div class="stage-label">GOOD FOOD<br>GOOD MOOD ♡</div>
     </section>
@@ -64,6 +69,11 @@
       <p class="photo-credit"><span id="photoCreditText"></span> · <a id="photoCreditLink" href="#" target="_blank" rel="noopener noreferrer">照片原始来源与授权 ↗</a></p>
     </div>
     <p class="photo-empty" id="photoUnavailable">🖼️ 这家餐厅暂无能确认来源的真实照片。不会使用其他店的图片代替。</p>
+    <div class="personal-photo-tool">
+      <label for="personalPhotoInput" class="photo-upload-label">📷 加入我拍的这家餐厅实拍照</label>
+      <input id="personalPhotoInput" type="file" accept="image/jpeg,image/png,image/webp" hidden>
+      <span class="tagsmall">可选择自己拍摄、获许可的照片。只储存于本浏览器，其他用户不会看见。</span>
+    </div>
     <h2 id="resultName">今晚吃什么？</h2>
     <p class="resultmeta">真实地图地点 · <span id="resultType"></span></p>
     <p class="opening-disclaimer">📍 营业状态未经现场核实，前往前建议确认。</p>
