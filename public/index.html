@@ -29,7 +29,14 @@
         <button id="spin" class="primary" type="button">◉ START GACHA ↗</button>
         <button id="openPrefs" class="secondary" type="button">☷ SET MY PREFERENCES →</button>
       </div>
-      <div class="smallnote" id="status" aria-live="polite">Klang 已准备好 · 点击 START GACHA 查询真实餐厅</div>
+      <div class="smallnote" id="status" aria-live="polite">先输入地址或选择 GPS，再开始扭蛋。</div>
+      <div class="quick-location">
+        <label for="quickAddress">想在别的地方吃？</label>
+        <div class="quick-location-bar">
+          <input id="quickAddress" type="search" autocomplete="off" placeholder="PV15 / Jalan Danau Saujana / 商场">
+          <button id="quickAddressGo" type="button" aria-label="查询指定地址附近餐厅">→</button>
+        </div>
+      </div>
     </section>
     <section class="stage" aria-label="大型 MakanPoP 扭蛋机">
       <div class="machine" id="machine">
