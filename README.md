@@ -43,3 +43,29 @@ This avoids hitting public Overpass servers for every spin.
 
 GitHub standard hosted Actions in a public repository is free; there is no API key or card.
 Public Overpass services are best-effort; the static snapshot may be outdated between refreshes.
+
+## Peninsular Malaysia food discovery (October 2026)
+
+**Scope:** Peninsular Malaysia only (13 administrative regions, including KL / Putrajaya). Sabah, Sarawak and Labuan are excluded.
+The website supports GPS searches and a searchable city, neighbourhood and shopping mall index.
+Shopping-mall suggestions select a 500 m vicinity; the nearby results are not guaranteed to be inside the mall.
+
+**Data:** all *mapped* named restaurant, fast_food, cafe, food_court, ice_cream, bakery and selected food-shop POIs in the Geofabrik Malaysia/Singapore/Brunei OpenStreetMap extract, clipped with Peninsular Malaysia state polygons from geoBoundaries.
+The generated catalogue has real OSM POI identifiers, coordinates, food category tags where present, and address/unit/floor when mapped.
+It never invents a restaurant to fill the selection. There is no guarantee of every restaurant or up-to-date menus inside every shopping mall.
+
+- Generator: `scripts/build-peninsula.py` (downloads and processes the public Geofabrik PBF)
+- Scheduled action: `.github/workflows/build-peninsula.yml` (monthly and manual)
+- Published metadata: `/data/peninsula/manifest.json`
+- City and mall lookup: `/data/peninsula/places.json`
+- Nearby static tiles: `/data/peninsula/tXX_YYY.json`, downloaded on demand.
+- If the national catalogue is missing or corrupt, the website still tries the previous Klang cache and public Overpass query.
+- If a workflow shows a red cross, inspect its logs before treating coverage as completed.
+
+**Attribution and licence:** © OpenStreetMap contributors under ODbL (https://www.openstreetmap.org/copyright).
+Contains country/state boundary data © geoBoundaries, gbOpen CC BY 4.0 (https://www.geoboundaries.org/).
+Geofabrik source https://download.geofabrik.de/asia/malaysia-singapore-brunei.html.
+
+**Cost:** No Google Places API key or billing account. Static data is free; GitHub Actions/hosting
+are within public-repository and free-plan use subject to provider limits. User-provided prices are personal notes,
+not verified current menu prices.
