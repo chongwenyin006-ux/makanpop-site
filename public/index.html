@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#fff8f1">
-  <meta name="description" content="MakanPoP — 一页搞定今天吃什么。选地点、筛选想吃的、转动扭蛋，从附近真实地图餐厅里抽选。">
+  <meta name="description" content="MakanPoP — 用西马 OpenStreetMap 社区记录随机找餐饮地点。营业状态、价格、照片可能缺失或过时，前往前请核实。">
   <title>MakanPoP · Today What to Eat?</title>
   <link rel="stylesheet" href="/onepage.css">
   <script defer src="/photo-lookup.js"></script>
@@ -24,12 +24,12 @@
     <section class="copy">
       <div class="eyebrow"><span>✦</span> THE FOOD DECIDER · MALAYSIA</div>
       <h1>Today<br>What to <em>Eat?</em></h1>
-      <p>别再纠结吃什么。<br>让 MakanPoP 从附近真实餐厅里抽一个惊喜！</p>
+      <p>别再纠结吃什么。<br>让 MakanPoP 从附近地图收录的餐饮地点里抽一个惊喜！</p>
       <div class="ctas">
         <button id="spin" class="primary" type="button">◉ START GACHA ↗</button>
         <button id="openPrefs" class="secondary" type="button">☷ SET MY PREFERENCES →</button>
       </div>
-      <div class="smallnote" id="status" aria-live="polite">先输入地址或选择 GPS，再开始扭蛋。</div>
+      <div class="smallnote" id="status" aria-live="polite">请选地址或 GPS。地点资料未经营业核实。</div>
       <div class="quick-location">
         <label for="quickAddress">想在别的地方吃？</label>
         <div class="quick-location-bar">
@@ -56,11 +56,11 @@
       <button type="button" data-open="location"><span>📍</span><b id="where">Klang / 巴生</b><i>→</i></button>
       <button type="button" data-open="budget"><span>◈</span><b id="money">RM 10–30</b><i>→</i></button>
       <button type="button" data-open="distance"><span>◎</span><b id="radius">5 km</b><i>→</i></button>
-      <div class="ticket-foot">REAL PLACES · RANDOM SURPRISES</div>
+      <div class="ticket-foot">OSM RECORDS · VERIFY BEFORE GOING</div>
     </aside>
   </main>
   <div class="footer"><span><b>01</b> Choose location</span><span>→</span><span><b>02</b> Set cravings</span><span>→</span><span><b>03</b> Turn the gacha</span></div>
-  <div class="credit">Restaurant data © <a href="https://www.openstreetmap.org/copyright" rel="noopener noreferrer" target="_blank">OpenStreetMap contributors</a> · Free map servers may be temporarily unavailable</div>
+  <div class="credit">餐厅位置为 OpenStreetMap 社区资料，并非经过营业核验 · © <a href="https://www.openstreetmap.org/copyright" rel="noopener noreferrer" target="_blank">OpenStreetMap contributors</a></div>
 </div>
 <dialog id="panel" aria-labelledby="panelTitle">
   <div class="modalhead"><h2 id="panelTitle">今天想吃什么？</h2><button class="close" id="closePanel" aria-label="关闭筛选" type="button">×</button></div>
@@ -82,14 +82,14 @@
       <span class="tagsmall">可选择自己拍摄、获许可的照片。只储存于本浏览器，其他用户不会看见。</span>
     </div>
     <h2 id="resultName">今晚吃什么？</h2>
-    <p class="resultmeta">真实地图地点 · <span id="resultType"></span></p>
-    <p class="opening-disclaimer">📍 营业状态未经现场核实，前往前建议确认。</p>
+    <p class="resultmeta">OpenStreetMap 收录地点（非营业认证） · <span id="resultType"></span></p>
+    <p class="opening-disclaimer">⚠️ 此记录可能已停业、搬迁或资料有误。MakanPoP 无法实时核实营业；请先在其他地图／餐厅官方渠道确认，再前往。</p>
     <div class="facts"><span class="fact" id="resultDist"></span><span class="fact" id="resultPrice"></span></div>
     <p class="resultmeta" id="resultAddress"></p>
     <p class="helper" id="resultNote"></p>
-    <div class="result-actions"><a class="primary" id="navLink" target="_blank" rel="noopener noreferrer">📍 地图导航 ↗</a><button class="secondary" id="reroll" type="button">↻ 再扭一次</button></div>
+    <div class="result-actions"><a class="primary" id="navLink" target="_blank" rel="noopener noreferrer">🔎 先核实店铺 ↗</a><button class="secondary" id="reroll" type="button">↻ 再扭一次</button></div>
     <div class="extra-actions"><button id="favAction" type="button">♡ 收藏</button><button id="blackAction" type="button">⊘ Blacklist</button><button id="spendAction" type="button">RM 记录消费</button><button id="reportClosed" type="button">🚫 这家已永久关闭</button></div>
-    <p class="photo-search-link"><a id="photosSearchLink" href="#" target="_blank" rel="noopener noreferrer">📷 在 Google Maps 搜索这家店的真实照片 ↗</a></p>
+    <p class="photo-search-link"><a id="photosSearchLink" href="#" target="_blank" rel="noopener noreferrer">📷 在 Google Maps 核实这家店及照片 ↗</a></p>
     <p class="osm-source"><a id="osmPlaceLink" href="#" target="_blank" rel="noopener noreferrer">核对 OpenStreetMap 地点资料 ↗</a></p>
     <div id="spendForm" hidden style="margin-top:19px;text-align:left"><label class="field" for="spendInput">你在这家餐厅实际人均花了多少 RM？<input id="spendInput" type="number" min="1" max="1000" placeholder="例如 18"></label><button id="saveSpend" class="chip" type="button" style="margin-top:8px">保存个人消费记录</button><div class="helper">资料仅保存在你当前浏览器，不是餐厅官方价格。</div></div>
   </div>
