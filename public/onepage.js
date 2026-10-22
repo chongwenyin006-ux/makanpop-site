@@ -66,6 +66,22 @@ async function fetchPlaces(){
   const k=key();
   if(s.cacheKey===k&&s.places.length)return true;
   // A short-term cache avoids repeatedly loading public Overpass servers.
+  // Klang snapshot is a real OSM extract prepared once, then served as a static file.
+  // Only use it when its geographic coverage contains the entire requested search circle.
+  const snapshotCenter={lat:3.044,lon:101.445},snapshotRadius=14500;
+  const eligibleForSnapshot=dist(s.location.lat,s.location.lon,snapshotCenter.lat,snapshotCenter.lon)+s.radius<=snapshotRadius;
+  if(eligibleForSnapshot){
+    try{
+      const snapshot=await fetchJsonWithDeadline('/data/klang-restaurants.json',7000);
+      if(snapshot.elements.length>=20){
+        const date=snapshot.generatedAt?new Date(snapshot.generatedAt).toLocaleDateString('zh-MY'):'日期未知';
+        const result=useRestaurantData(snapshot.elements,k,'Klang 实际 OpenStreetMap 餐厅资料（更新于 '+date+'）');
+        // Keep a local backup if the static file becomes temporarily unavailable.
+        writeRestaurantCache(k,snapshot.elements);
+        return result;
+      }
+    }catch(e){console.info('Klang static data not available; using live lookup:',e.message)}
+  }
   const fresh=readRestaurantCache(k,30*60000);
   if(fresh)return useRestaurantData(fresh.elements,k,'已读取最近缓存的地图资料');
   const q=new URLSearchParams({lat:s.location.lat,lon:s.location.lon,radius:s.radius});
