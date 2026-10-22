@@ -2,6 +2,7 @@
 // The file is published as a static asset; end users never query Overpass for Klang.
 // Data © OpenStreetMap contributors, ODbL 1.0: https://www.openstreetmap.org/copyright
 import {mkdir,writeFile} from 'node:fs/promises';
+import {isMarkedClosed} from '../lib/place-status.mjs';
 const lat=3.044,lon=101.445,radius=14500;
 const query='[out:json][timeout:45];nwr(around:'+radius+','+lat+','+lon+')[amenity~"^(restaurant|cafe|fast_food|food_court|ice_cream)$"][name];out center 3500;';
 const providers=[
@@ -35,7 +36,7 @@ for(const url of providers){
       if(x.lon!==undefined)p.lon=x.lon;
       if(x.center)p.center=x.center;
       return p;
-    }).filter(x=>x.tags.name&&Number.isFinite(Number(x.lat??x.center?.lat))&&Number.isFinite(Number(x.lon??x.center?.lon)));
+    }).filter(x=>x.tags.name&&!isMarkedClosed(x.tags)&&Number.isFinite(Number(x.lat??x.center?.lat))&&Number.isFinite(Number(x.lon??x.center?.lon)));
     if(elements.length<20)throw Error('Suspiciously few named food places: '+elements.length);
     provider=url;
     break;
