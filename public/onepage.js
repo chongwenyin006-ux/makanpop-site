@@ -152,8 +152,15 @@ async function searchAddress(query){
   }
   const tokens=addressTokens(text);
   if(!tokens.length)return false;
-  const firsts=[...new Set([tokens[0]?.[0],...tokens.slice(1,5).map(x=>x[0])])]
-    .filter(Boolean).map(x=>/^[a-z0-9]$/.test(x)?x:'other').slice(0,5);
+  // Road/address terms such as 'Jalan' or house numbers are not useful
+  // shard keys. Use distinctive building/street words, like 'Danau'.
+  const commonWords=new Set(['jalan','jln','lorong','persiaran','taman','kampung',
+    'kg','no','lot','unit','block','blok','jalanraya','jalanr','street',
+    'road','rd','apartment','apartments']);
+  const useful=tokens.filter(x=>!commonWords.has(x)&&!/^\d+[a-z]?$/.test(x));
+  const choices=useful.length?useful:tokens;
+  const firsts=[...new Set(choices.slice(0,4)
+    .map(t=>/^[a-z0-9]+$/.test(t)?t.slice(0,3):'other'))];
   if($('placeSearchState'))$('placeSearchState').textContent='正在从西马地址索引寻找匹配…';
   let rows=[];
   for(const letter of firsts){
