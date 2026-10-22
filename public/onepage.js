@@ -22,16 +22,121 @@ function nameOf(t){return t['name:en']||t.name||t['name:ms']||t['name:zh']}
 function normalize(raw){const seen=new Set(),out=[];for(const p of raw||[]){const t=p.tags||{},lat=Number(p.lat??p.center?.lat),lon=Number(p.lon??p.center?.lon);if(!Number.isFinite(lat)||!Number.isFinite(lon))continue;const name=String(nameOf(t)||'').trim(),id=String(p.type)+':'+p.id;if(!name||seen.has(id))continue;seen.add(id);const d=dist(s.location.lat,s.location.lon,lat,lon);if(d>s.radius+250)continue;out.push({id,name,lat,lon,dist:d,tags:t,address:[t['addr:housenumber'],t['addr:street'],t['addr:suburb'],t['addr:city']].filter(Boolean).join(', ')})}return out.sort((a,b)=>a.dist-b.dist)}
 function foodMatch(p,id){const row=FOOD.find(x=>x[0]===id);if(!row)return false;const tags=p.tags||{},text=String(tags.cuisine||'')+' '+String(tags.name||'')+' '+String(tags['name:en']||'')+' '+String(tags.description||'');const hay=text.toLowerCase().replace(/[_;,]/g,' ');return row[2].some(word=>hay.includes(word.replace(/_/g,' ')))||(id==='Cafe'&&tags.amenity==='cafe')||(id==='Ice Cream'&&tags.amenity==='ice_cream')}
 function eligible(){return s.places.filter(p=>!s.blacklist.some(x=>x.id===p.id)).filter(p=>!s.want.length||s.want.some(id=>foodMatch(p,id))).filter(p=>!s.avoid.some(id=>foodMatch(p,id))).filter(p=>{const price=Number(s.prices[p.id]);return price>0?(price>=s.min&&price<=s.max):s.unknown})}
-function locationHTML(){return '<div class="section"><h3>📍 今天在哪一区？</h3><p class="helper">默认 Klang。也可以选择其他地区或在 HTTPS 页面使用 GPS。</p><div class="controlrow"><button class="secondary" data-action="gps">◎ 使用我的位置</button><button class="secondary" data-place="Klang / 巴生">📍 Klang / 巴生</button></div><div class="field" style="margin-top:15px"><label for="placeInput">搜索马来西亚地区</label><input id="placeInput" list="placeList" placeholder="Klang、Setia Alam、Setapak…"><datalist id="placeList">'+LOCS.map(x=>'<option value="'+esc(x[0])+'">').join('')+'</datalist></div><button class="chip" data-action="place" style="margin-top:8px">选择这个地区 →</button><p class="helper">目前支持列表中的地区。其他地点可以使用 GPS，不会凭空生成餐厅。</p></div>'}
+function locationHTML(){return '<div class="section"><h3>📍 西马任何地区 / 商场</h3><p class="helper">可 GPS 定位，或直接搜索西马城市、城镇、商场。沙巴、砂拉越不包含在资料库中。</p><div class="controlrow"><button class="secondary" data-action="gps">◎ 使用我的位置</button><button class="secondary" data-place="Klang / 巴生">📍 Klang / 巴生</button></div><div class="field" style="margin-top:15px"><label for="placeInput">搜索城市 / Mall</label><input id="placeInput" list="placeList" autocomplete="off" placeholder="例如 Penang、Johor Bahru、Mid Valley、Pavilion…"><datalist id="placeList">'+LOCS.map(x=>'<option value="'+esc(x[0])+'">').join('')+'</datalist></div><button class="chip" data-action="place" style="margin-top:8px">使用这个地点 →</button><p id="placeSearchState" class="helper">正在检查西马地区和商场索引…</p></div>'}
 function foodChips(mode){return '<div class="chips">'+FOOD.map(x=>'<button class="chip '+(mode==='avoid'?'avoid':'')+'" data-food="'+esc(x[0])+'" data-mode="'+mode+'" aria-pressed="'+s[mode].includes(x[0])+'">'+x[1]+' '+esc(x[0])+'</button>').join('')+'</div>'}
 function filterHTML(){return locationHTML()+'<div class="section"><h3>🍜 想吃什么？</h3><p class="helper">可多选。只有地图资料能识别的料理才可按类别准确筛选。</p>'+foodChips('want')+'</div><div class="section"><h3>🚫 今天不想吃？</h3><p class="helper">排除料理类型；公开地图没有完整食材／过敏原资料，不提供安全保证。</p>'+foodChips('avoid')+'</div><div class="section"><h3>💸 每人预算与距离</h3><div class="fieldset"><label class="field">最低预算 RM<input id="minInput" type="number" min="0" max="1000" value="'+s.min+'"></label><label class="field">最高预算 RM<input id="maxInput" type="number" min="1" max="1000" value="'+s.max+'"></label></div><div class="chips" style="margin-top:12px">'+[10,20,30,50,100].map(x=>'<button class="chip" data-budget="'+x+'">RM '+x+'</button>').join('')+'</div><div class="field" style="margin-top:16px"><label for="radiusInput">搜索半径</label><select id="radiusInput">'+[1000,3000,5000,8000,10000].map(x=>'<option value="'+x+'" '+(x===s.radius?'selected':'')+'>'+(x/1000)+' km</option>').join('')+'</select></div><label class="helper" style="display:flex;align-items:center;gap:8px;margin-top:15px"><input type="checkbox" id="unknownPrice" '+(s.unknown?'checked':'')+'>允许显示没有价格资料的真实餐厅</label><p class="helper">OpenStreetMap 通常没有菜单价钱。RM 筛选仅能核对你自己记录过的价格，不能保证其他餐厅符合预算。</p></div><div class="controlrow"><button class="secondary" data-action="clear">重置口味筛选</button></div>'}
 function listHTML(type){const list=s[type];return '<p class="helper">记录保存在你自己的浏览器，换设备不会自动同步。</p>'+(list.length?list.map(x=>'<div class="listitem"><span>'+esc(x.name)+'</span><button data-remove="'+esc(x.id)+'" data-list="'+type+'">移除</button></div>').join(''):'<p class="empty">这里暂时没有餐厅。</p>')}
 function themeHTML(){return '<div class="section"><h3>🎨 换一个心情</h3><div class="chips">'+THEMES.map(x=>'<button class="chip themechip" data-theme="'+x[0]+'" aria-pressed="'+(s.theme===x[0])+'"><span class="swatch" style="background:'+x[2]+'"></span>'+x[1]+'</button>').join('')+'</div></div><div class="section"><h3>自己选主色</h3><p class="helper">只改变界面强调色，餐厅资料不会改变。</p><input id="customColor" type="color" value="'+(s.custom||'#ed4b50')+'"><button class="chip" data-action="clear-color">恢复主题默认颜色</button></div>'}
+
+let directory=null;
+let directoryPromise=null;
+const directoryLabel=x=>x.name+' ('+(x.kind==='mall'?'Mall':x.kind)+(x.city?', '+x.city:'')+')';
+async function ensureDirectory(){
+  if(directory)return directory;
+  if(directoryPromise)return directoryPromise;
+  directoryPromise=(async()=>{
+    try{
+      const res=await fetch('/data/peninsula/places.json',{cache:'force-cache'});
+      if(!res.ok)throw Error('地区索引尚未发布');
+      const data=await res.json();
+      if(!Array.isArray(data.places)||!data.places.length)throw Error('地区索引为空');
+      directory=data.places.filter(x=>Number.isFinite(x.lat)&&Number.isFinite(x.lon)&&x.name);
+      return directory;
+    }catch(e){
+      console.info('Peninsula place catalogue not yet ready',e.message);
+      return null;
+    }finally{directoryPromise=null}
+  })();
+  return directoryPromise;
+}
+function updateLocationSuggestions(query=''){
+  const dl=$('placeList');if(!dl)return;
+  const term=String(query||'').toLocaleLowerCase().trim();
+  const candidates=(directory||[]).filter(x=>x.name.toLocaleLowerCase().includes(term)||
+    x.city&&x.city.toLocaleLowerCase().includes(term))
+    .slice(0,50);
+  dl.innerHTML=LOCS.map(x=>'<option value="'+esc(x[0])+'"></option>').join('')+
+    candidates.map(x=>'<option value="'+esc(directoryLabel(x))+'"></option>').join('');
+  const state=$('placeSearchState');
+  if(state)state.textContent=directory?
+    '西马地区／商场索引已载入，共 '+directory.length+' 个真实地图地点。商场内商店数量取决于地图收录。':
+    '西马地点索引暂未生成。仍可使用上面的预设城市或 GPS。';
+}
+
 let page='filters';
-function openPanel(type){page=type;$('panelTitle').textContent=type==='filters'?'今天想吃什么？':type==='blacklist'?'我的 Blacklist':type==='favorites'?'我的收藏':'选择网站主题';$('panelContent').innerHTML=type==='filters'?filterHTML():type==='blacklist'?listHTML('blacklist'):type==='favorites'?listHTML('favorites'):themeHTML();$('panelDone').textContent=type==='filters'?'完成设置，去扭蛋 →':'完成';$('panel').showModal()}
-function choosePlace(q){const term=String(q||'').trim().toLowerCase();const loc=LOCS.find(x=>x[0].toLowerCase()===term)||LOCS.find(x=>x[0].toLowerCase().includes(term)&&term.length>=3);if(!loc){toast('没有找到这个地区，请从列表选择或用 GPS。');return}s.location={name:loc[0],lat:loc[1],lon:loc[2],kind:'preset'};s.cacheKey='';s.places=[];s.recent=[];refresh();status('已选 '+loc[0]+'，点击 START GACHA 查询附近真实餐厅');openPanel('filters');toast('地点已更新：'+loc[0])}
+function openPanel(type){page=type;$('panelTitle').textContent=type==='filters'?'今天想吃什么？':type==='blacklist'?'我的 Blacklist':type==='favorites'?'我的收藏':'选择网站主题';$('panelContent').innerHTML=type==='filters'?filterHTML():type==='blacklist'?listHTML('blacklist'):type==='favorites'?listHTML('favorites'):themeHTML();$('panelDone').textContent=type==='filters'?'完成设置，去扭蛋 →':'完成';if(!$('panel').open)$('panel').showModal();if(type==='filters'){ensureDirectory().then(()=>updateLocationSuggestions($('placeInput')?.value||''))}}
+async function choosePlace(q){
+  const term=String(q||'').trim().toLowerCase();
+  if(!term){toast('请输入西马城市或商场名称');return}
+  const loc=LOCS.find(x=>x[0].toLowerCase()===term)||
+    LOCS.find(x=>x[0].toLowerCase().includes(term)&&term.length>=3);
+  let selected=loc?{name:loc[0],lat:loc[1],lon:loc[2]}:null;
+  if(!selected){
+    const results=await ensureDirectory();
+    const match=results?.find(x=>directoryLabel(x).toLowerCase()===term)||
+      results?.find(x=>x.name.toLowerCase()===term)||
+      results?.find(x=>x.name.toLowerCase().includes(term)&&term.length>=4);
+    if(match)selected={name:match.name+(match.kind==='mall'?' · Mall':''),lat:match.lat,lon:match.lon};
+  }
+  if(!selected){toast('没找到这个地点。请输入西马城市或商场名称，或使用 GPS。');return}
+  s.location={...selected,kind:'preset'};
+  s.cacheKey='';s.places=[];s.recent=[];
+  refresh();status('已选择 '+selected.name+'，点击 START GACHA 查附近真实餐厅');
+  if($('panel').open)openPanel('filters');
+  toast('地点已更新：'+selected.name);
+}
 async function gps(){if(!window.isSecureContext||!navigator.geolocation){toast('GPS 需要 HTTPS 和浏览器定位权限。');return}status('正在请求位置权限…');try{const pos=await new Promise((ok,fail)=>navigator.geolocation.getCurrentPosition(ok,fail,{enableHighAccuracy:false,timeout:16000,maximumAge:300000}));s.location={name:'我的 GPS 位置',lat:pos.coords.latitude,lon:pos.coords.longitude,kind:'gps'};s.cacheKey='';s.places=[];s.recent=[];refresh();if($('panel').open)openPanel('filters');status('GPS 定位成功，点击 START GACHA 获取附近餐厅');toast('定位成功！')}catch(e){const msg=e.code===1?'定位权限被拒绝，请允许浏览器使用位置':e.code===2?'目前无法获取设备位置':e.code===3?'GPS 定位超时':'定位失败';status(msg,true);toast(msg)}}
 function key(){return [s.location.lat.toFixed(3),s.location.lon.toFixed(3),s.radius].join(':')}
+
+let nationalManifest=null;
+let nationalPromise=null;
+let nationalLastAttempt=0;
+async function ensureNationalManifest(){
+  if(nationalManifest)return nationalManifest;
+  if(nationalPromise)return nationalPromise;
+  if(Date.now()-nationalLastAttempt<60000)return null;
+  nationalLastAttempt=Date.now();
+  nationalPromise=(async()=>{
+    try{
+      const r=await fetch('/data/peninsula/manifest.json',{cache:'no-store'});
+      if(!r.ok)throw Error('西马资料库尚未生成');
+      const m=await r.json();
+      if(!Array.isArray(m.tiles)||m.tiles.length<20||!Number.isFinite(m.tileSize))throw Error('西马数据索引格式不正确');
+      nationalManifest={...m,tileSet:new Set(m.tiles)};
+      return nationalManifest;
+    }catch(e){console.info('Nationwide catalogue not ready:',e.message);return null}
+    finally{nationalPromise=null}
+  })();
+  return nationalPromise;
+}
+async function loadPeninsulaFood(k){
+  const manifest=await ensureNationalManifest();
+  if(!manifest)return false;
+  // The national build contains only Peninsular-Malaysia OSM features.
+  // One neighbouring cell on each axis covers the allowed 10km search radius.
+  const centerLat=Math.floor(s.location.lat/manifest.tileSize);
+  const centerLon=Math.floor(s.location.lon/manifest.tileSize);
+  const keys=[];
+  for(let dx=-1;dx<=1;dx++)for(let dy=-1;dy<=1;dy++){
+    const cell='t'+(centerLat+dx)+'_'+(centerLon+dy);
+    if(manifest.tileSet.has(cell))keys.push(cell);
+  }
+  if(!keys.length)return false;
+  status('正在从西马餐厅资料库读取附近地点…');
+  const responses=await Promise.all(keys.map(async cell=>{
+    const response=await fetch('/data/peninsula/'+cell+'.json',{cache:'force-cache'});
+    if(!response.ok)throw Error('资料块 '+cell+' 读取失败 ('+response.status+')');
+    const json=await response.json();
+    if(!Array.isArray(json.elements))throw Error('资料块格式错误');
+    return json.elements;
+  }));
+  const dedup=new Map();
+  for(const elements of responses)for(const p of elements)dedup.set(p.type+':'+p.id,p);
+  useRestaurantData([...dedup.values()],k,'西马 OpenStreetMap 实际餐饮地点（更新于 '+new Date(manifest.generatedAt).toLocaleDateString('zh-MY')+'）');
+  writeRestaurantCache(k,[...dedup.values()]);
+  return true;
+}
+
 const CACHE_PREFIX='makanpop.osm.lookup.v1.';
 function readRestaurantCache(k,maxAge=7*86400000){
   try{
@@ -64,6 +169,12 @@ function useRestaurantData(elements,k,label){
 }
 async function fetchPlaces(){
   const k=key();
+  if(s.location.lon>105.3||s.location.lat>7.5||s.location.lat<1||s.location.lon<99){
+    status('目前只支持西马（不包括 Sabah、Sarawak 和 Labuan），请改用西马地区。',true);
+    return false;
+  }
+  try{if(await loadPeninsulaFood(k))return true;}catch(e){console.warn('Nationwide offline lookup unavailable:',e);}
+
   if(s.cacheKey===k&&s.places.length)return true;
   // A short-term cache avoids repeatedly loading public Overpass servers.
   // Klang snapshot is a real OSM extract prepared once, then served as a static file.
@@ -133,6 +244,7 @@ function toggleList(type){const p=s.current;if(!p)return;const already=s[type].s
 function resultUpdateActions(){if(!s.current)return;$('favAction').textContent=s.favorites.some(x=>x.id===s.current.id)?'♥ 已收藏':'♡ 收藏';$('blackAction').textContent=s.blacklist.some(x=>x.id===s.current.id)?'✓ 已 Blacklist':'⊘ Blacklist'}
 $('openFilters').onclick=()=>openPanel('filters');$('openBlack').onclick=()=>openPanel('blacklist');$('openThemes').onclick=()=>openPanel('themes');$('openPrefs').onclick=()=>openPanel('filters');document.querySelectorAll('[data-open]').forEach(b=>b.addEventListener('click',()=>openPanel('filters')));$('closePanel').onclick=()=>$('panel').close();$('panelDone').onclick=()=>{$('panel').close();if(page==='filters')spin()};$('panelContent').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.food){const type=b.dataset.mode,id=b.dataset.food;const other=type==='want'?'avoid':'want';s[type]=s[type].includes(id)?s[type].filter(x=>x!==id):[...s[type],id];s[other]=s[other].filter(x=>x!==id);save();openPanel('filters');return}if(b.dataset.place){choosePlace(b.dataset.place);return}if(b.dataset.budget){s.max=Number(b.dataset.budget);s.min=Math.min(s.min,s.max);refresh();openPanel('filters');return}if(b.dataset.theme){s.theme=b.dataset.theme;s.custom='';refresh();openPanel('themes');return}if(b.dataset.remove){s[b.dataset.list]=s[b.dataset.list].filter(x=>x.id!==b.dataset.remove);save();openPanel(page);return}if(b.dataset.action==='place'){choosePlace($('placeInput').value);return}if(b.dataset.action==='gps'){gps();return}if(b.dataset.action==='clear'){s.want=[];s.avoid=[];refresh();openPanel('filters');return}if(b.dataset.action==='clear-color'){s.custom='';refresh();openPanel('themes')}});
 $('panelContent').addEventListener('change',e=>{const el=e.target;if(el.id==='radiusInput'){s.radius=Number(el.value);s.cacheKey='';s.places=[]}if(el.id==='minInput'){s.min=Math.max(0,Math.min(1000,Number(el.value)||0))}if(el.id==='maxInput'){s.max=Math.min(1000,Math.max(s.min,Number(el.value)||1))}if(el.id==='unknownPrice')s.unknown=el.checked;if(el.id==='customColor')s.custom=el.value;refresh()});
+$('panelContent').addEventListener('input',e=>{if(e.target.id==='placeInput')updateLocationSuggestions(e.target.value)});
 $('panelContent').addEventListener('keydown',e=>{if(e.target.id==='placeInput'&&e.key==='Enter'){e.preventDefault();choosePlace(e.target.value)}});
 $('spin').onclick=spin;$('knob').onclick=spin;let pt=null;$('knob').addEventListener('pointerdown',e=>{pt=[e.clientX,e.clientY]});$('knob').addEventListener('pointerup',e=>{if(pt&&Math.hypot(e.clientX-pt[0],e.clientY-pt[1])>24)spin();pt=null});
 $('closeResult').onclick=()=>$('result').close();$('reroll').onclick=()=>{$('result').close();spin()};$('favAction').onclick=()=>toggleList('favorites');$('blackAction').onclick=()=>toggleList('blacklist');$('spendAction').onclick=()=>{$('spendForm').hidden=!$('spendForm').hidden};$('saveSpend').onclick=()=>{const price=Number($('spendInput').value);if(!(price>0&&price<=1000)){toast('请输入 RM1–RM1000 的金额');return}if(!s.current)return;s.prices[s.current.id]=price;save();$('resultPrice').textContent='你记录的人均 RM'+price;$('resultNote').textContent='这是你的个人消费记录，不是官方菜单价格。';$('spendForm').hidden=true;toast('保存成功！')};
