@@ -171,12 +171,12 @@ class FoodPlaces(osmium.SimpleHandler):
         self.address_seen.add(key)
         # Avoid a 20 MB 'Jalan ...' index: index by the distinctive part
         # of the address, using the same rules as the browser search.
-        words = re.findall(r"[^\\W_]+", label.casefold(), flags=re.UNICODE)
+        words = re.findall(r"[^\W_]+", label.casefold(), flags=re.UNICODE)
         stop = {"jalan", "jln", "lorong", "persiaran", "taman", "kampung",
                 "kg", "no", "lot", "unit", "block", "blok", "jalanraya", "jalanr",
                 "street", "road", "rd", "apartment", "apartments"}
         meaningful = [w for w in words if w not in stop and
-                      not re.match(r"^\\d+[a-z]?$", w)]
+                      not re.match(r"^\d+[a-z]?$", w)]
         primary = meaningful[0] if meaningful else (words[0] if words else "")
         if not primary:
             return
