@@ -1,0 +1,38 @@
+name: Test TomTom provider integration
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'lib/tomtom-places.mjs'
+      - 'tests/tomtom.test.mjs'
+      - 'server.mjs'
+      - 'functions/api/restaurants.js'
+      - 'functions/api/provider-status.js'
+      - '.github/workflows/test-tomtom.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate TomTom adapter with mocked POIs, no billed requests
+        run: |
+          node --test tests/tomtom.test.mjs
+          node --check public/onepage.js
+          node --check public/photo-lookup.js
+          node --check server.mjs
+      - name: Verify server starts without TomTom credentials and clearly says OSM
+        run: |
+          node server.mjs >/tmp/server.log 2>&1 &
+          sleep 3
+          curl --fail --silent http://localhost:3000/api/provider-status > /tmp/provider.json
+          node -e "const r=require('/tmp/provider.json');if(r.tomtomEnabled)process.exit(1);if(r.provider!=='osm')process.exit(2)"
+          curl --fail --silent http://localhost:3000/ | grep -q 'sourceNote'
