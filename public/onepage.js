@@ -160,7 +160,7 @@ async function searchAddress(query){
   const useful=tokens.filter(x=>!commonWords.has(x)&&!/^\d+[a-z]?$/.test(x));
   const choices=useful.length?useful:tokens;
   const firsts=[...new Set(choices.slice(0,4)
-    .map(t=>/^[a-z0-9]+$/.test(t)?t.slice(0,3):'other'))];
+    .map(t=>/^[a-z0-9]+$/.test(t)?t.slice(0,2):'other'))];
   if($('placeSearchState'))$('placeSearchState').textContent='正在从西马地址索引寻找匹配…';
   let rows=[];
   for(const letter of firsts){
